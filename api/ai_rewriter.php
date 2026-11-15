@@ -44,7 +44,26 @@ function resolveCategoryBadge(string $sourceSite, string $categorySlug, string $
 }
 
 /**
- * Lắp ráp các phần tử JSON (hoặc fallback) vào Template cố định
+ * Chuẩn hóa danh sách hashtag, luôn có #VNEconomics
+ */
+function normalizeSocialHashtags(string $sourceSite, $hashtags, int $limit = 5): array {
+    $cleanTags = ['#VNEconomics'];
+    if ($sourceSite === 'marketing2student') {
+        $cleanTags[] = '#Marketing2Student';
+    }
+    if (is_array($hashtags)) {
+        foreach ($hashtags as $tag) {
+            $tag = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$tag);
+            if (!empty($tag) && strcasecmp($tag, 'VNEconomics') !== 0 && strcasecmp($tag, 'Marketing2Student') !== 0) {
+                $cleanTags[] = '#' . $tag;
+            }
+        }
+    }
+    return array_slice(array_unique($cleanTags), 0, $limit);
+}
+
+/**
+ * Lắp ráp các phần tử JSON (hoặc fallback) vào Template cố định cho Facebook
  */
 function renderFacebookCaption(array $post, array $parts, int $angle): string {
     $sourceSite    = $post['source_site'] ?? 'vneconomics';
@@ -87,21 +106,134 @@ function renderFacebookCaption(array $post, array $parts, int $angle): string {
     $caption .= "🔗 {$utmUrl}\n\n";
     $caption .= getVneFacebookFooter() . "\n\n";
 
-    // Chuẩn hóa hashtags, luôn có #VNEconomics
-    $cleanTags = ['#VNEconomics'];
-    if ($sourceSite === 'marketing2student') {
-        $cleanTags[] = '#Marketing2Student';
+    $cleanTags = normalizeSocialHashtags($sourceSite, $hashtags, 5);
+    $caption .= implode(' ', $cleanTags);
+
+    return $caption;
+}
+
+/**
+ * Tính độ dài hiển thị thực tế của HTML caption theo chuẩn UTF-16 code units của Telegram Bot API
+ */
+function tgUtf16Len(string $html): int {
+    $plain = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    if (function_exists('mb_convert_encoding')) {
+        return (int)(strlen(mb_convert_encoding($plain, 'UTF-16BE', 'UTF-8')) / 2);
     }
-    if (is_array($hashtags)) {
-        foreach ($hashtags as $tag) {
-            $tag = preg_replace('/[^a-zA-Z0-9_]/', '', (string)$tag);
-            if (!empty($tag) && strcasecmp($tag, 'VNEconomics') !== 0 && strcasecmp($tag, 'Marketing2Student') !== 0) {
-                $cleanTags[] = '#' . $tag;
+    return mb_strlen($plain, 'UTF-8');
+}
+
+function tgEscape(string $text): string {
+    return htmlspecialchars($text, ENT_NOQUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+function tgTruncateText(string $text, int $maxChars): string {
+    if ($maxChars <= 4) {
+        return '';
+    }
+    if (mb_strlen($text, 'UTF-8') <= $maxChars) {
+        return $text;
+    }
+    return rtrim(mb_substr($text, 0, $maxChars - 3, 'UTF-8')) . '...';
+}
+
+/**
+ * Lắp ráp caption HTML cho Telegram sendPhoto, đảm bảo luôn <= 1000 ký tự hiển thị (giới hạn cứng 1024)
+ */
+function renderTelegramCaption(array $post, array $parts, int $angle, int $maxVisibleLen = 1000): string {
+    $sourceSite    = $post['source_site'] ?? 'vneconomics';
+    $categorySlug  = $post['category_slug'] ?? 'general';
+    $categoryLabel = $post['category_label'] ?? 'Tổng Hợp';
+    $targetUrl     = $post['target_url'] ?? 'https://vneconomics.com/';
+
+    $badge    = resolveCategoryBadge($sourceSite, $categorySlug, $categoryLabel);
+    $headline = mb_strtoupper(trim($parts['headline'] ?? ($post['title'] ?? '')), 'UTF-8');
+    $hook     = trim($parts['hook'] ?? '');
+    $takeaway = trim($parts['takeaway'] ?? '');
+
+    $cleanBullets = [];
+    if (!empty($parts['bullets']) && is_array($parts['bullets'])) {
+        foreach (array_slice($parts['bullets'], 0, 3) as $b) {
+            $b = ltrim(trim((string)$b), "•-* \t");
+            if (!empty($b)) {
+                $cleanBullets[] = $b;
             }
         }
     }
-    $cleanTags = array_slice(array_unique($cleanTags), 0, 5);
-    $caption .= implode(' ', $cleanTags);
+
+    $utmUrl = $targetUrl . (strpos($targetUrl, '?') !== false ? '&' : '?')
+        . "utm_source=telegram&utm_medium=group&utm_campaign=autopost&utm_content=angle_{$angle}";
+    $utmUrlEsc = htmlspecialchars($utmUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+    $tags = normalizeSocialHashtags($sourceSite, $parts['hashtags'] ?? [], 3);
+
+    $build = function (string $h, array $bs, string $tk, array $tgs) use ($badge, $headline, $utmUrlEsc): string {
+        $out = '<b>' . tgEscape("{$badge} {$headline}") . "</b>\n\n";
+        if ($h !== '') {
+            $out .= tgEscape($h) . "\n\n";
+        }
+        if (!empty($bs)) {
+            $out .= "📌 <b>ĐIỂM CỐT LÕI:</b>\n";
+            foreach ($bs as $b) {
+                $out .= '• ' . tgEscape($b) . "\n";
+            }
+            $out .= "\n";
+        }
+        if ($tk !== '') {
+            $out .= '💡 <i>' . tgEscape($tk) . "</i>\n\n";
+        }
+        $out .= "👉 <a href=\"{$utmUrlEsc}\">Đọc phân tích chi tiết tại đây</a>\n";
+        $out .= "🌐 <a href=\"https://vneconomics.com/\">Website</a> | 📘 <a href=\"https://www.facebook.com/vneconomics/\">Fanpage</a>";
+        if (!empty($tgs)) {
+            $out .= "\n\n" . tgEscape(implode(' ', $tgs));
+        }
+        return $out;
+    };
+
+    $caption = $build($hook, $cleanBullets, $takeaway, $tags);
+    if (tgUtf16Len($caption) <= $maxVisibleLen) {
+        return $caption;
+    }
+
+    // Bước 1: Bỏ hashtags nếu vượt ngưỡng
+    $tags = [];
+    $caption = $build($hook, $cleanBullets, $takeaway, $tags);
+    if (tgUtf16Len($caption) <= $maxVisibleLen) {
+        return $caption;
+    }
+
+    // Bước 2: Bỏ takeaway nếu vẫn vượt ngưỡng
+    $takeaway = '';
+    $caption = $build($hook, $cleanBullets, $takeaway, $tags);
+    if (tgUtf16Len($caption) <= $maxVisibleLen) {
+        return $caption;
+    }
+
+    // Bước 3: Rút gọn hook xuống tối đa 180 ký tự
+    if (mb_strlen($hook, 'UTF-8') > 180) {
+        $hook = tgTruncateText($hook, 180);
+        $caption = $build($hook, $cleanBullets, $takeaway, $tags);
+        if (tgUtf16Len($caption) <= $maxVisibleLen) {
+            return $caption;
+        }
+    }
+
+    // Bước 4: Rút gọn đều từng bullet để vừa khít giới hạn
+    $excess = tgUtf16Len($caption) - $maxVisibleLen;
+    if ($excess > 0 && !empty($cleanBullets)) {
+        $perBulletTrim = (int)ceil(($excess + 15) / count($cleanBullets));
+        foreach ($cleanBullets as $idx => $b) {
+            $targetLen = max(40, mb_strlen($b, 'UTF-8') - $perBulletTrim);
+            $cleanBullets[$idx] = tgTruncateText($b, $targetLen);
+        }
+        $caption = $build($hook, $cleanBullets, $takeaway, $tags);
+    }
+
+    // Bảo vệ cuối cùng nếu bài có tiêu đề quá dài
+    while (tgUtf16Len($caption) > $maxVisibleLen && !empty($cleanBullets)) {
+        array_pop($cleanBullets);
+        $caption = $build($hook, $cleanBullets, $takeaway, $tags);
+    }
 
     return $caption;
 }

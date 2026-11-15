@@ -23,6 +23,7 @@ defined('VNE_APP') or define('VNE_APP', true);
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/wp_sync.php';
 require_once __DIR__ . '/ai_rewriter.php';
+require_once __DIR__ . '/telegram_poster.php';
 
 $isCli = (php_sapi_name() === 'cli' || defined('STDIN'));
 $config = getVneConfig();
@@ -202,35 +203,51 @@ $postCount = (int)$chosenItem['post_count'];
 $angle     = ($postCount % 3) + 1;
 
 $caption    = '';
+$tgCaption  = '';
 $aiModel    = 'cached';
 $aiError    = null;
 
-$capStmt = $pdo->prepare("SELECT caption_text, ai_model FROM social_post_captions WHERE queue_id = :qid AND angle = :angle LIMIT 1");
+$capStmt = $pdo->prepare("SELECT caption_text, tg_caption_text, ai_model FROM social_post_captions WHERE queue_id = :qid AND angle = :angle LIMIT 1");
 $capStmt->execute([':qid' => $queueId, ':angle' => $angle]);
 $cachedCap = $capStmt->fetch();
 
 if ($cachedCap && !empty($cachedCap['caption_text'])) {
     $caption = $cachedCap['caption_text'];
     $aiModel = $cachedCap['ai_model'] . ' (cached)';
+
+    if (!empty($cachedCap['tg_caption_text'])) {
+        $tgCaption = $cachedCap['tg_caption_text'];
+    } else {
+        $tgAiResult = rewritePostWithGemini($chosenItem, $angle, $config);
+        $tgCaption  = renderTelegramCaption($chosenItem, $tgAiResult['parts'], $angle);
+        if ($tgAiResult['ok']) {
+            try {
+                $updTg = $pdo->prepare("UPDATE social_post_captions SET tg_caption_text = :tg_cap WHERE queue_id = :qid AND angle = :angle");
+                $updTg->execute([':tg_cap' => $tgCaption, ':qid' => $queueId, ':angle' => $angle]);
+            } catch (\Throwable $e) {}
+        }
+    }
 } else {
-    $aiResult = rewritePostWithGemini($chosenItem, $angle, $config);
-    $caption  = renderFacebookCaption($chosenItem, $aiResult['parts'], $angle);
-    $aiModel  = $aiResult['model'];
-    $aiError  = $aiResult['error'];
+    $aiResult  = rewritePostWithGemini($chosenItem, $angle, $config);
+    $caption   = renderFacebookCaption($chosenItem, $aiResult['parts'], $angle);
+    $tgCaption = renderTelegramCaption($chosenItem, $aiResult['parts'], $angle);
+    $aiModel   = $aiResult['model'];
+    $aiError   = $aiResult['error'];
 
     // Chỉ lưu cache DB nếu Gemini viết thành công (để lần sau nếu fallback sẽ thử gọi lại AI)
     if ($aiResult['ok']) {
         try {
             $saveCap = $pdo->prepare("
-                INSERT INTO social_post_captions (queue_id, angle, caption_text, ai_model, is_manual_edited)
-                VALUES (:qid, :angle, :cap, :model, 0)
-                ON DUPLICATE KEY UPDATE caption_text = VALUES(caption_text), ai_model = VALUES(ai_model)
+                INSERT INTO social_post_captions (queue_id, angle, caption_text, tg_caption_text, ai_model, is_manual_edited)
+                VALUES (:qid, :angle, :cap, :tg_cap, :model, 0)
+                ON DUPLICATE KEY UPDATE caption_text = VALUES(caption_text), tg_caption_text = VALUES(tg_caption_text), ai_model = VALUES(ai_model)
             ");
             $saveCap->execute([
-                ':qid'   => $queueId,
-                ':angle' => $angle,
-                ':cap'   => $caption,
-                ':model' => $aiModel
+                ':qid'    => $queueId,
+                ':angle'  => $angle,
+                ':cap'    => $caption,
+                ':tg_cap' => $tgCaption,
+                ':model'  => $aiModel
             ]);
         } catch (\Throwable $e) {}
     }
@@ -317,6 +334,12 @@ $fbPostId   = null;
 $fbResponse = null;
 $errorMsg   = null;
 $status     = 'success';
+$tgEnabled  = !empty($config['telegram']['enabled']);
+$localImage = '';
+
+if ($enabled || $tgEnabled) {
+    $localImage = prepareFacebookImage($chosenItem, $config);
+}
 
 if (!$enabled || empty($pageId) || empty($pageToken) || strpos($pageToken, 'YOUR_') === 0) {
     $fbPostId   = 'simulated_' . $safeSlot . '_' . uniqid();
@@ -335,7 +358,6 @@ if (!$enabled || empty($pageId) || empty($pageToken) || strpos($pageToken, 'YOUR
     curl_close($ch);
     usleep(1200000);
 
-    $localImage = prepareFacebookImage($chosenItem, $config);
     $publishUrl = "https://graph.facebook.com/{$graphVer}/{$pageId}/photos";
 
     $payload = [
@@ -390,6 +412,13 @@ if (!$enabled || empty($pageId) || empty($pageToken) || strpos($pageToken, 'YOUR
     }
 }
 
+// 6B. ĐẨY BÀI ĐỒNG THỜI LÊN TELEGRAM GROUP (TÁCH BIỆT LỖI VỚI FACEBOOK)
+$tgResult = postToTelegramGroup($tgCaption, $localImage, $chosenItem['image_url'] ?? '', $config, $sourceSite);
+$tgStatus    = $tgResult['status'];
+$tgMessageId = $tgResult['message_id'];
+$tgResponse  = $tgResult['response'];
+$tgError     = $tgResult['error'];
+
 // 7. CẬP NHẬT QUEUE, GHI LOG & FILE LOCK
 $now = date('Y-m-d H:i:s');
 if ($status === 'success') {
@@ -418,10 +447,12 @@ if ($status === 'success') {
 $logStmt = $pdo->prepare("
     INSERT INTO social_post_logs (
         posted_date, slot_key, source_site, category_slug, ref_slug,
-        target_url, post_angle, caption_used, fb_post_id, fb_response_json, status, error_message, created_at
+        target_url, post_angle, caption_used, tg_caption_used, fb_post_id, fb_response_json,
+        tg_message_id, tg_response_json, status, tg_status, error_message, tg_error_message, created_at
     ) VALUES (
         :pdate, :slot, :site, :cat, :slug,
-        :url, :angle, :cap, :fbid, :resp, :st, :err, :now
+        :url, :angle, :cap, :tg_cap, :fbid, :resp,
+        :tg_mid, :tg_resp, :st, :tg_st, :err, :tg_err, :now
     )
     ON DUPLICATE KEY UPDATE
         source_site      = VALUES(source_site),
@@ -430,25 +461,35 @@ $logStmt = $pdo->prepare("
         target_url       = VALUES(target_url),
         post_angle       = VALUES(post_angle),
         caption_used     = VALUES(caption_used),
+        tg_caption_used  = VALUES(tg_caption_used),
         fb_post_id       = VALUES(fb_post_id),
         fb_response_json = VALUES(fb_response_json),
+        tg_message_id    = VALUES(tg_message_id),
+        tg_response_json = VALUES(tg_response_json),
         status           = VALUES(status),
-        error_message    = VALUES(error_message)
+        tg_status        = VALUES(tg_status),
+        error_message    = VALUES(error_message),
+        tg_error_message = VALUES(tg_error_message)
 ");
 $logStmt->execute([
-    ':pdate' => $todayStr,
-    ':slot'  => $slotKey,
-    ':site'  => $sourceSite,
-    ':cat'   => $catSlug,
-    ':slug'  => $slug,
-    ':url'   => $targetUrl,
-    ':angle' => $angle,
-    ':cap'   => $caption,
-    ':fbid'  => $fbPostId,
-    ':resp'  => json_encode($fbResponse, JSON_UNESCAPED_UNICODE),
-    ':st'    => $status,
-    ':err'   => $errorMsg,
-    ':now'   => $now
+    ':pdate'   => $todayStr,
+    ':slot'    => $slotKey,
+    ':site'    => $sourceSite,
+    ':cat'     => $catSlug,
+    ':slug'    => $slug,
+    ':url'     => $targetUrl,
+    ':angle'   => $angle,
+    ':cap'     => $caption,
+    ':tg_cap'  => $tgCaption,
+    ':fbid'    => $fbPostId,
+    ':resp'    => json_encode($fbResponse, JSON_UNESCAPED_UNICODE),
+    ':tg_mid'  => $tgMessageId,
+    ':tg_resp' => json_encode($tgResponse, JSON_UNESCAPED_UNICODE),
+    ':st'      => $status,
+    ':tg_st'   => $tgStatus,
+    ':err'     => $errorMsg,
+    ':tg_err'  => $tgError,
+    ':now'     => $now
 ]);
 
 echo json_encode([
@@ -472,5 +513,13 @@ echo json_encode([
     'fb_post_id'      => $fbPostId,
     'caption_preview' => $caption,
     'fb_response'     => $fbResponse,
-    'error'           => $errorMsg
+    'error'           => $errorMsg,
+    'telegram'        => [
+        'status'            => $tgStatus,
+        'message_id'        => $tgMessageId,
+        'caption_utf16_len' => tgUtf16Len($tgCaption),
+        'caption_preview'   => $tgCaption,
+        'response'          => $tgResponse,
+        'error'             => $tgError
+    ]
 ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);

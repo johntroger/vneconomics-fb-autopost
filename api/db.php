@@ -82,11 +82,29 @@ function ensureAutopostSchema(PDO $pdo): void {
 
     try {
         $check = $pdo->query("SHOW TABLES LIKE 'social_post_queue'")->fetch();
-        if ($check) return;
+        if (!$check) {
+            $sql = file_get_contents($migrationFile);
+            if ($sql) {
+                $pdo->exec($sql);
+            }
+        }
 
-        $sql = file_get_contents($migrationFile);
-        if ($sql) {
-            $pdo->exec($sql);
+        // Self-healing cho Migration 002 (Telegram Autopost)
+        $capCol = $pdo->query("SHOW COLUMNS FROM social_post_captions LIKE 'tg_caption_text'")->fetch();
+        if (!$capCol) {
+            $pdo->exec("ALTER TABLE social_post_captions ADD COLUMN tg_caption_text TEXT DEFAULT NULL AFTER caption_text");
+        }
+
+        $logCol = $pdo->query("SHOW COLUMNS FROM social_post_logs LIKE 'tg_status'")->fetch();
+        if (!$logCol) {
+            $pdo->exec("
+                ALTER TABLE social_post_logs
+                    ADD COLUMN tg_caption_used TEXT DEFAULT NULL AFTER caption_used,
+                    ADD COLUMN tg_message_id VARCHAR(100) DEFAULT NULL AFTER fb_response_json,
+                    ADD COLUMN tg_response_json TEXT DEFAULT NULL AFTER tg_message_id,
+                    ADD COLUMN tg_status ENUM('success', 'failed', 'skipped') DEFAULT NULL AFTER status,
+                    ADD COLUMN tg_error_message TEXT DEFAULT NULL AFTER error_message
+            ");
         }
     } catch (\Throwable $e) {
         error_log('[VNE Schema Error] ' . $e->getMessage());

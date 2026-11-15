@@ -31,6 +31,14 @@ return [
         'page_access_token' => 'YOUR_NEVER_EXPIRING_PAGE_ACCESS_TOKEN',
         'graph_version'     => 'v21.0'
     ],
+    'telegram' => [
+        'enabled'              => false, // Đặt true khi đã điền bot_token và chat_id thật
+        'bot_token'            => 'YOUR_TELEGRAM_BOT_TOKEN',
+        'chat_id'              => 'YOUR_TELEGRAM_GROUP_CHAT_ID', // Ví dụ: -1001234567890
+        'message_thread_id'    => null, // Tùy chọn: ID Topic nếu Group bật Forum (hoặc mảng ['vneconomics' => 12, 'marketing2student' => 34])
+        'disable_notification' => false,
+        'timeout'              => 20
+    ],
     'gemini' => [
         'api_key'         => 'YOUR_GEMINI_API_KEY',
         // Các model khả dụng hiện tại: gemini-4-hydrogen (khuyên dùng), gemini-4-argon, gemini-4-carbon, gemini-3.8-flash, gemini-3.5-flash-lite
