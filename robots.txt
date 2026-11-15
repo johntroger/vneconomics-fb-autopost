@@ -1,0 +1,16 @@
+User-agent: facebookexternalhit
+Allow: /privacy.html
+Allow: /terms.html
+Allow: /data-deletion.html
+
+User-agent: Facebot
+Allow: /privacy.html
+Allow: /terms.html
+Allow: /data-deletion.html
+
+User-agent: *
+Disallow: /api/
+Disallow: /admin.html
+Allow: /privacy.html
+Allow: /terms.html
+Allow: /data-deletion.html
