@@ -183,7 +183,11 @@ function renderTelegramCaption(array $post, array $parts, int $angle, int $maxVi
             $out .= '💡 <i>' . tgEscape($tk) . "</i>\n\n";
         }
         $out .= "👉 <a href=\"{$utmUrlEsc}\">Đọc phân tích chi tiết tại đây</a>\n";
-        $out .= "🌐 <a href=\"https://vneconomics.com/\">Website</a> | 📘 <a href=\"https://www.facebook.com/vneconomics/\">Fanpage</a>";
+        $out .= "🌐 <a href=\"https://vneconomics.com/\">Website</a> | "
+            . "📘 <a href=\"https://www.facebook.com/vneconomics/\">Facebook</a> | "
+            . "𝕏 <a href=\"https://x.com/vneconomics_com\">X</a> | "
+            . "💬 <a href=\"https://t.me/BlockchainDEco\">Telegram</a> | "
+            . "💼 <a href=\"https://www.linkedin.com/company/vneconomics/\">LinkedIn</a>";
         if (!empty($tgs)) {
             $out .= "\n\n" . tgEscape(implode(' ', $tgs));
         }
