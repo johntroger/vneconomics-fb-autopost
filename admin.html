@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VNEconomics — Facebook Autopost Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-800 pb-5">
+      <div>
+        <h1 class="text-2xl font-bold text-white">VNEconomics Facebook Autopost</h1>
+        <p class="text-sm text-slate-400">4 bài/ngày: 08:00 &amp; 17:00 (vneconomics.com) • 13:00 &amp; 21:00 (marketing2student.com)</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <input id="adminToken" type="password" placeholder="Admin Token (nếu có)" class="px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+        <button onclick="syncWp()" class="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-sm font-medium text-white transition">Đồng bộ WordPress</button>
+        <button onclick="loadAll()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium text-slate-200 transition">Làm mới</button>
+      </div>
+    </header>
+
+    <!-- Trạng thái & Chạy thử 4 khung giờ -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4" id="statusCards">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <div class="text-xs uppercase tracking-wider text-slate-400">Kết nối API</div>
+        <div id="apiBadges" class="mt-2 space-y-1 text-sm text-slate-300">Đang tải...</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <div class="text-xs uppercase tracking-wider text-slate-400">Hàng đợi 2 Website</div>
+        <div id="siteStats" class="mt-2 space-y-1 text-sm text-slate-300">Đang tải...</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">Chạy thử theo khung giờ</div>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="triggerSlot('08:00')" class="px-2 py-1.5 rounded bg-emerald-700/80 hover:bg-emerald-600 text-xs font-medium">Test 08:00 (VNE)</button>
+          <button onclick="triggerSlot('13:00')" class="px-2 py-1.5 rounded bg-amber-700/80 hover:bg-amber-600 text-xs font-medium">Test 13:00 (M2S)</button>
+          <button onclick="triggerSlot('17:00')" class="px-2 py-1.5 rounded bg-emerald-700/80 hover:bg-emerald-600 text-xs font-medium">Test 17:00 (VNE)</button>
+          <button onclick="triggerSlot('21:00')" class="px-2 py-1.5 rounded bg-amber-700/80 hover:bg-amber-600 text-xs font-medium">Test 21:00 (M2S)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Danh sách hàng đợi & Xem trước Caption AI -->
+    <section class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 class="text-lg font-semibold text-white">Hàng đợi bài viết (Ưu tiên chưa đăng &amp; LRU)</h2>
+        <select id="siteFilter" onchange="loadQueue()" class="px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-sm">
+          <option value="">Tất cả 2 website</option>
+          <option value="vneconomics">vneconomics.com</option>
+          <option value="marketing2student">marketing2student.com</option>
+        </select>
+      </div>
+      <div id="queueList" class="space-y-3 text-sm">Đang tải...</div>
+    </section>
+
+    <!-- Nhật ký đăng bài -->
+    <section class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+      <h2 class="text-lg font-semibold text-white mb-3">Nhật ký đăng gần nhất</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="border-b border-slate-800 text-slate-400">
+            <tr>
+              <th class="py-2 pr-3">Ngày / Giờ</th>
+              <th class="py-2 pr-3">Nguồn</th>
+              <th class="py-2 pr-3">Category</th>
+              <th class="py-2 pr-3">Bài viết</th>
+              <th class="py-2 pr-3">Angle</th>
+              <th class="py-2 pr-3">Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody id="logsBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Modal xem / sửa Caption AI -->
+  <div id="captionModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 id="modalTitle" class="font-semibold text-white truncate pr-4">Xem trước Caption</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-white text-lg">&times;</button>
+      </div>
+      <textarea id="modalCaption" rows="14" class="w-full rounded-lg bg-slate-950 border border-slate-700 p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"></textarea>
+      <div class="flex flex-wrap justify-between gap-2">
+        <button onclick="regenerateInModal()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-medium">✨ Gemini viết lại</button>
+        <div class="flex gap-2">
+          <button onclick="closeModal()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm">Đóng</button>
+          <button onclick="saveInModal()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm font-medium">Lưu chỉnh sửa</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentQueueId = null;
+    const tokenInput = document.getElementById('adminToken');
+    tokenInput.value = localStorage.getItem('vne_admin_token') || '';
+    tokenInput.addEventListener('change', () => localStorage.setItem('vne_admin_token', tokenInput.value));
+
+    function apiUrl(action, params = {}) {
+      const u = new URL('api/admin.php', window.location.href);
+      u.searchParams.set('action', action);
+      if (tokenInput.value) u.searchParams.set('token', tokenInput.value);
+      Object.entries(params).forEach(([k, v]) => u.searchParams.set(k, v));
+      return u.toString();
+    }
+
+    async function loadStatus() {
+      const res = await fetch(apiUrl('get_status')).then(r => r.json());
+      if (!res.success) {
+        document.getElementById('apiBadges').innerHTML = `<span class="text-rose-400">${res.message}</span>`;
+        return;
+      }
+      const c = res.config;
+      document.getElementById('apiBadges').innerHTML = `
+        <div>Facebook: <b class="${c.fb_enabled && c.has_fb_token ? 'text-emerald-400' : 'text-amber-400'}">${c.fb_enabled && c.has_fb_token ? 'LIVE' : 'SIMULATED (Test)'}</b></div>
+        <div>Gemini AI: <b class="${c.has_gemini_key ? 'text-emerald-400' : 'text-rose-400'}">${c.has_gemini_key ? c.gemini_model : 'Chưa cấu hình Key'}</b></div>
+        <div class="text-xs text-slate-400">Giờ server: ${res.server_time}</div>
+      `;
+
+      document.getElementById('siteStats').innerHTML = (res.stats_by_site || []).map(s => `
+        <div class="flex justify-between">
+          <span>${s.source_site}</span>
+          <span><b>${s.total}</b> bài (chưa đăng: <b class="text-emerald-400">${s.never_posted}</b>)</span>
+        </div>
+      `).join('') || '<span class="text-slate-500">Chưa có dữ liệu. Hãy bấm Đồng bộ WordPress.</span>';
+
+      document.getElementById('logsBody').innerHTML = (res.recent_logs || []).map(l => `
+        <tr class="border-b border-slate-800/60">
+          <td class="py-2 pr-3 whitespace-nowrap">${l.posted_date} (${l.slot_key})</td>
+          <td class="py-2 pr-3">${l.source_site}</td>
+          <td class="py-2 pr-3">${l.category_slug}</td>
+          <td class="py-2 pr-3 max-w-xs truncate">${l.ref_slug}</td>
+          <td class="py-2 pr-3">#${l.post_angle}</td>
+          <td class="py-2 pr-3">
+            <span class="${l.status === 'success' ? 'text-emerald-400' : 'text-rose-400'}">${l.status}</span>
+            ${l.fb_post_id ? `<span class="text-slate-500 ml-1">(${l.fb_post_id})</span>` : ''}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadQueue() {
+      const site = document.getElementById('siteFilter').value;
+      const res = await fetch(apiUrl('list_queue', { site })).then(r => r.json());
+      if (!res.success) return;
+      document.getElementById('queueList').innerHTML = (res.items || []).map(item => `
+        <div class="p-3 rounded-lg bg-slate-950 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+              <span class="px-2 py-0.5 rounded bg-slate-800 text-sky-300">${item.source_site}</span>
+              <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300">${item.category_label || item.category_slug}</span>
+              <span>Đã đăng: <b>${item.post_count}</b> lần</span>
+              ${item.cached_caption ? '<span class="text-emerald-400">✓ Đã có nháp AI</span>' : '<span class="text-slate-500">Chưa tạo nháp</span>'}
+            </div>
+            <a href="${item.target_url}" target="_blank" class="font-medium text-white hover:text-sky-400 block truncate">${item.title}</a>
+          </div>
+          <div class="flex shrink-0 gap-2">
+            <button onclick='openModal(${JSON.stringify(item).replace(/'/g, "&#39;")})' class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-xs font-medium">Xem / Viết AI</button>
+          </div>
+        </div>
+      `).join('') || '<div class="text-slate-500">Trống.</div>';
+    }
+
+    async function syncWp() {
+      const res = await fetch(apiUrl('sync_wp')).then(r => r.json());
+      alert('Đồng bộ xong:\n' + JSON.stringify(res.sites, null, 2));
+      loadAll();
+    }
+
+    async function triggerSlot(slot) {
+      if (!confirm(`Chạy test đăng bài cho khung giờ ${slot}?`)) return;
+      const res = await fetch(apiUrl('trigger_slot_test', { slot })).then(r => r.json());
+      alert(JSON.stringify(res, null, 2));
+      loadAll();
+    }
+
+    function openModal(item) {
+      currentQueueId = item.id;
+      document.getElementById('modalTitle').textContent = item.title;
+      document.getElementById('modalCaption').value = item.cached_caption || '';
+      document.getElementById('captionModal').classList.remove('hidden');
+      if (!item.cached_caption) regenerateInModal();
+    }
+    function closeModal() { document.getElementById('captionModal').classList.add('hidden'); }
+
+    async function regenerateInModal() {
+      document.getElementById('modalCaption').value = 'Đang gọi Gemini viết lại nội dung...';
+      const fd = new FormData();
+      fd.append('queue_id', currentQueueId);
+      const res = await fetch(apiUrl('generate_caption'), { method: 'POST', body: fd }).then(r => r.json());
+      document.getElementById('modalCaption').value = res.caption || res.error || 'Lỗi';
+      loadQueue();
+    }
+
+    async function saveInModal() {
+      const res = await fetch(apiUrl('save_caption'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ queue_id: currentQueueId, caption: document.getElementById('modalCaption').value })
+      }).then(r => r.json());
+      alert(res.message);
+      closeModal();
+      loadQueue();
+    }
+
+    function loadAll() { loadStatus(); loadQueue(); }
+    loadAll();
+  </script>
+</body>
+</html>
