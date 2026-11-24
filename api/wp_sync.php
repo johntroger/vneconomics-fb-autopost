@@ -26,29 +26,151 @@ function cleanWpHtmlToText(string $html, int $maxChars = 8000): string {
 }
 
 /**
- * Gọi WP REST API một trang cụ thể
+ * Tải nội dung URL qua cURL
  */
-function fetchWpPostsPage(string $wpApiUrl, int $page, int $perPage): array {
-    $sep = (strpos($wpApiUrl, '?') !== false) ? '&' : '?';
-    $url = "{$wpApiUrl}{$sep}status=publish&per_page={$perPage}&page={$page}&_embed";
-
+function httpGetRaw(string $url, int $timeout = 20): array {
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+    curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
     curl_setopt($ch, CURLOPT_USERAGENT, 'VNEconomicsAutopost/1.0 (https://vneconomics.com)');
     $raw = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $err = curl_error($ch);
     curl_close($ch);
 
-    if ($httpCode !== 200 || empty($raw)) {
-        return ['ok' => false, 'http_code' => $httpCode, 'error' => $err ?: "HTTP {$httpCode}", 'posts' => []];
+    return ['ok' => ($httpCode === 200 && !empty($raw)), 'http_code' => $httpCode, 'error' => $err ?: "HTTP {$httpCode}", 'body' => (string)$raw];
+}
+
+/**
+ * Đọc chuỗi JS bắt đầu tại $quotePos (hỗ trợ "..." và `...`)
+ */
+function extractJsQuotedValue(string $js, int $quotePos, string $quoteChar): array {
+    $len = strlen($js);
+    $pos = $quotePos + 1;
+    $out = '';
+
+    while ($pos < $len) {
+        $ch = $js[$pos];
+        if ($ch === '\\' && $pos + 1 < $len) {
+            $next = $js[$pos + 1];
+            if ($next === 'n') { $out .= "\n"; }
+            elseif ($next === 'r') { $out .= "\r"; }
+            elseif ($next === 't') { $out .= "\t"; }
+            else { $out .= $next; }
+            $pos += 2;
+            continue;
+        }
+        if ($ch === $quoteChar) {
+            return [$out, $pos + 1];
+        }
+        $out .= $ch;
+        $pos++;
+    }
+    return [$out, $len];
+}
+
+/**
+ * Đồng bộ bài viết từ React/Vite bundle (khi site không còn dùng WordPress REST API)
+ */
+function extractViteBundleArticles(string $baseUrl): array {
+    $baseUrl = rtrim($baseUrl, '/');
+    $home = httpGetRaw($baseUrl . '/', 15);
+    if (!$home['ok']) {
+        return ['ok' => false, 'error' => 'Không tải được trang chủ: ' . $home['error'], 'articles' => []];
     }
 
-    $decoded = json_decode($raw, true);
+    if (!preg_match('/(\/assets\/marketing-database-[a-zA-Z0-9_-]+\.js)/', $home['body'], $m)) {
+        return ['ok' => false, 'error' => 'Không tìm thấy bundle marketing-database-*.js trong HTML', 'articles' => []];
+    }
+
+    $bundleUrl = $baseUrl . $m[1];
+    $bundle = httpGetRaw($bundleUrl, 30);
+    if (!$bundle['ok']) {
+        return ['ok' => false, 'error' => 'Không tải được JS bundle: ' . $bundle['error'], 'articles' => []];
+    }
+
+    $js = $bundle['body'];
+    $articles = [];
+    $offset = 0;
+
+    // Quét tuần tự từng bài viết có dạng {id:...,wpId:...,slug:"..."
+    while (preg_match('/\{id:(\d+),wpId:(\d+),slug:"([^"]+)"/', $js, $hdr, PREG_OFFSET_CAPTURE, $offset)) {
+        $itemStart = $hdr[0][1];
+        $wpId = (int)$hdr[2][0];
+        $slug = trim($hdr[3][0]);
+        $cursor = $hdr[0][1] + strlen($hdr[0][0]);
+
+        // Tìm vị trí content: của bài viết này
+        $contentPos = strpos($js, 'content:', $cursor);
+        if ($contentPos === false) break;
+
+        $metaSlice = substr($js, $itemStart, $contentPos - $itemStart);
+
+        $extractStrField = function (string $fieldName) use ($metaSlice): string {
+            $needle = $fieldName . ':';
+            $p = strpos($metaSlice, $needle);
+            if ($p === false) return '';
+            $qPos = $p + strlen($needle);
+            if ($qPos >= strlen($metaSlice)) return '';
+            $qChar = $metaSlice[$qPos];
+            if ($qChar !== '"' && $qChar !== '`') return '';
+            [$val] = extractJsQuotedValue($metaSlice, $qPos, $qChar);
+            return $val;
+        };
+
+        $title        = $extractStrField('title');
+        $excerpt      = $extractStrField('excerpt');
+        $catLabel     = $extractStrField('category');
+        $catSlug      = $extractStrField('categorySlug');
+        $featuredImg  = $extractStrField('featuredImage');
+        $publishedAt  = $extractStrField('publishedAt');
+
+        // Đọc content:`...` hoặc content:"..."
+        $cQuotePos = $contentPos + 8; // strlen('content:')
+        $cQuoteChar = $js[$cQuotePos] ?? '';
+        $contentHtml = '';
+        $nextOffset = $cQuotePos + 1;
+        if ($cQuoteChar === '`' || $cQuoteChar === '"') {
+            [$contentHtml, $nextOffset] = extractJsQuotedValue($js, $cQuotePos, $cQuoteChar);
+        }
+
+        if (!empty($slug) && !empty($title)) {
+            $articles[] = [
+                'wp_id'          => $wpId,
+                'slug'           => $slug,
+                'title'          => html_entity_decode(strip_tags($title), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                'link'           => $baseUrl . '/' . ltrim($slug, '/'),
+                'category_slug'  => $catSlug ?: 'general',
+                'category_label' => $catLabel ?: 'Tổng Hợp',
+                'image_url'      => $featuredImg,
+                'excerpt_html'   => $excerpt,
+                'content_html'   => $contentHtml,
+                'published_at'   => !empty($publishedAt) ? date('Y-m-d H:i:s', strtotime($publishedAt)) : null
+            ];
+        }
+
+        $offset = $nextOffset;
+    }
+
+    return ['ok' => !empty($articles), 'error' => empty($articles) ? 'Không parse được bài viết từ bundle' : null, 'articles' => $articles];
+}
+
+/**
+ * Gọi WP REST API một trang cụ thể
+ */
+function fetchWpPostsPage(string $wpApiUrl, int $page, int $perPage): array {
+    $sep = (strpos($wpApiUrl, '?') !== false) ? '&' : '?';
+    $url = "{$wpApiUrl}{$sep}status=publish&per_page={$perPage}&page={$page}&_embed";
+
+    $res = httpGetRaw($url, 20);
+    if (!$res['ok']) {
+        return ['ok' => false, 'http_code' => $res['http_code'], 'error' => $res['error'], 'posts' => []];
+    }
+
+    $decoded = json_decode($res['body'], true);
     if (!is_array($decoded)) {
-        return ['ok' => false, 'http_code' => $httpCode, 'error' => 'Invalid JSON', 'posts' => []];
+        return ['ok' => false, 'http_code' => $res['http_code'], 'error' => 'Invalid JSON', 'posts' => []];
     }
 
     return ['ok' => true, 'http_code' => 200, 'posts' => $decoded];
@@ -99,8 +221,35 @@ function syncWordPressSites(?PDO $pdo, array $config, bool $quickSyncOnly = fals
         for ($page = 1; $page <= $maxPages; $page++) {
             $res = fetchWpPostsPage($wpApiUrl, $page, $perPage);
             if (!$res['ok']) {
-                // Hết trang hoặc lỗi
+                // Nếu WP REST API trả HTML/lỗi ở trang 1, tự động fallback sang Vite Bundle (cho site React/Vite)
                 if ($page === 1) {
+                    $baseUrl = trim($siteConf['base_url'] ?? '');
+                    if (!empty($baseUrl)) {
+                        $viteRes = extractViteBundleArticles($baseUrl);
+                        if ($viteRes['ok']) {
+                            $items = $quickSyncOnly ? array_slice($viteRes['articles'], 0, 20) : $viteRes['articles'];
+                            foreach ($items as $art) {
+                                $upsertStmt->execute([
+                                    ':site'      => $siteKey,
+                                    ':wp_id'     => (int)$art['wp_id'],
+                                    ':cat_slug'  => mb_substr($art['category_slug'], 0, 100, 'UTF-8'),
+                                    ':cat_label' => mb_substr($art['category_label'], 0, 150, 'UTF-8'),
+                                    ':slug'      => mb_substr($art['slug'], 0, 191, 'UTF-8'),
+                                    ':title'     => mb_substr($art['title'], 0, 500, 'UTF-8'),
+                                    ':url'       => mb_substr($art['link'], 0, 500, 'UTF-8'),
+                                    ':img'       => mb_substr($art['image_url'], 0, 700, 'UTF-8'),
+                                    ':excerpt'   => cleanWpHtmlToText($art['excerpt_html'], 600),
+                                    ':content'   => cleanWpHtmlToText($art['content_html'], 7500),
+                                    ':pub_at'    => $art['published_at']
+                                ]);
+                                $syncedCount++;
+                            }
+                            break;
+                        } else {
+                            $errors[] = "WP API ({$res['error']}) & Vite Bundle ({$viteRes['error']})";
+                            break;
+                        }
+                    }
                     $errors[] = "Page {$page}: " . $res['error'];
                 }
                 break;
