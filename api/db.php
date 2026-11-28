@@ -77,6 +77,12 @@ function ensureAutopostSchema(PDO $pdo): void {
     if ($checked) return;
     $checked = true;
 
+    $cacheDir = __DIR__ . '/cache';
+    $markerFile = $cacheDir . '/.schema_autopost_v2.flag';
+    if (is_file($markerFile)) {
+        return;
+    }
+
     $migrationFile = __DIR__ . '/../migrations/001_social_autopost.sql';
     if (!file_exists($migrationFile)) return;
 
@@ -106,6 +112,11 @@ function ensureAutopostSchema(PDO $pdo): void {
                     ADD COLUMN tg_error_message TEXT DEFAULT NULL AFTER error_message
             ");
         }
+
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0755, true);
+        }
+        @file_put_contents($markerFile, gmdate('c'));
     } catch (\Throwable $e) {
         error_log('[VNE Schema Error] ' . $e->getMessage());
     }

@@ -22,8 +22,24 @@ return [
         'charset'  => 'utf8mb4'
     ],
     'security' => [
-        'admin_token' => 'THAY_BANG_CHUOI_ADMIN_TOKEN_32_KY_TU',
-        'cron_secret' => 'vne_fb_cron_2026_secret_key'
+        'admin_token'          => 'THAY_BANG_CHUOI_ADMIN_TOKEN_32_KY_TU',
+        'cron_secret'          => 'vne_fb_cron_2026_secret_key',
+        'download_hmac_secret' => 'THAY_BANG_CHUOI_HMAC_BI_MAT_64_KY_TU',
+        'cors_allowed_origins' => ['https://vneconomics.com', 'https://www.vneconomics.com'],
+        'admin_firebase_uids'  => [] // Danh sách Firebase UID có quyền admin
+    ],
+    'firebase' => [
+        'project_id' => 'YOUR_FIREBASE_PROJECT_ID'
+    ],
+    'turnstile' => [
+        'enabled'    => false,
+        'secret_key' => 'YOUR_CLOUDFLARE_TURNSTILE_SECRET_KEY'
+    ],
+    'web3' => [
+        'testnet_only'             => true,
+        'evm_certificate_contract' => '',
+        'evm_defi_vault_contract'  => '',
+        'cardano_network'          => 'preprod'
     ],
     'facebook' => [
         'enabled'           => false, // Đặt true khi đã điền page_id và page_access_token thật (false = chế độ SIMULATED để test)

@@ -1,0 +1,67 @@
+name: Build & Deploy to Plesk (vneconomics.com)
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-verify:
+    name: Build & Test Production Bundle
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 2. Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: 3. Install dependencies
+        run: npm ci
+
+      - name: 4. Static typecheck
+        run: npm run typecheck
+
+      - name: 5. Automated Unit Tests
+        run: npm test
+
+      - name: 6. Build Vite SPA
+        run: npm run build
+
+      - name: 7. Assemble Production Payload
+        run: |
+          mkdir -p dist/api dist/uploads dist/migrations
+          cp -r api/* dist/api/ 2>/dev/null || true
+          rm -f dist/api/config.php
+          cp public/.htaccess dist/.htaccess 2>/dev/null || true
+          cp -r migrations/* dist/migrations/ 2>/dev/null || true
+          printf "Options -Indexes\n<FilesMatch \"\\.(php|phtml|phar|sh|pl|py|cgi)$\">\n  Order allow,deny\n  Deny from all\n</FilesMatch>\n" > dist/uploads/.htaccess
+          touch dist/uploads/index.html
+          echo "<?php header('HTTP/1.0 403 Forbidden'); exit; ?>" > dist/uploads/index.php
+          echo "vneconomics.com build completed at $(date -u)" > dist/build-info.txt
+
+      - name: 8. Deploy to 'production' Branch (For Plesk Git Extension)
+        run: |
+          cd dist
+          git init -b production
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "deploy: sync production build to Plesk (${GITHUB_SHA::7})"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" production
+
+      - name: 9. Trigger Plesk Git Webhook (If configured)
+        if: env.PLESK_WEBHOOK != ''
+        env:
+          PLESK_WEBHOOK: ${{ secrets.PLESK_GIT_WEBHOOK_URL }}
+        run: |
+          curl -k -X POST "$PLESK_WEBHOOK" || echo "Webhook trigger completed"

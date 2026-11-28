@@ -9,20 +9,21 @@ header('X-Content-Type-Options: nosniff');
 
 defined('VNE_APP') or define('VNE_APP', true);
 
-require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/core/bootstrap.php';
 require_once __DIR__ . '/wp_sync.php';
 require_once __DIR__ . '/ai_rewriter.php';
 
-$config     = getVneConfig();
-$adminToken = trim($config['security']['admin_token'] ?? '');
-$provided   = $_SERVER['HTTP_X_ADMIN_TOKEN'] ?? $_GET['token'] ?? $_POST['token'] ?? '';
+$config = vneBootstrapApi();
+vneEnforceRateLimit('admin', 30, 60);
 
-if (empty($adminToken) || strpos($adminToken, 'THAY_BANG_') === 0) {
-    // Cho phép truy cập nếu chưa đổi token mặc định khi chạy local, nhưng cảnh báo
-} elseif ($provided !== $adminToken) {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Sai hoặc thiếu Admin Token'], JSON_UNESCAPED_UNICODE);
-    exit;
+$adminToken = trim((string)($config['security']['admin_token'] ?? ''));
+$provided   = trim((string)($_SERVER['HTTP_X_ADMIN_TOKEN'] ?? ''));
+
+if ($adminToken === '' || str_starts_with($adminToken, 'THAY_BANG_')) {
+    vneJsonError('Admin Token chưa được cấu hình bảo mật trong api/config.php.', 503, 'ADMIN_TOKEN_NOT_CONFIGURED');
+}
+if ($provided === '' || !hash_equals($adminToken, $provided)) {
+    vneJsonError('Sai hoặc thiếu header X-Admin-Token.', 403, 'FORBIDDEN');
 }
 
 $pdo    = getDbConnection();

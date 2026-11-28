@@ -1,0 +1,1202 @@
+export type SkillCategorySlug =
+  | 'all'
+  | 'nckh-luan-an'
+  | 'khoa-luan-giang-day'
+  | 'kinh-te-tai-chinh'
+  | 'blockchain-web3'
+  | 'marketing-seo-geo'
+  | 'vibecode-automation';
+
+export type SkillCostType = 'free' | 'points' | 'opensource';
+export type SkillDifficulty = 'Cơ bản' | 'Trung bình' | 'Nâng cao';
+
+export interface AISkillItem {
+  slug: string;
+  title: string;
+  categorySlug: Exclude<SkillCategorySlug, 'all'>;
+  categoryName: string;
+  costType: SkillCostType;
+  pointsCost: number;
+  difficulty: SkillDifficulty;
+  shortDesc: string;
+  summary: string;
+  primaryTag: string;
+  tags: string[];
+  compatibleAgents: string[];
+  formatLabel: string;
+  languageLabel: string;
+  isRecommended: boolean;
+  isMakeInVNE: boolean;
+  isAcademicEEAT: boolean;
+  downloadUrl?: string;
+  adviceStudent: string;
+  benefitNote: string;
+  useCases: string[];
+  pros: string[];
+  limits: string[];
+  steps: string[];
+  samplePrompt: string;
+}
+
+export const SKILL_CATEGORIES: { slug: SkillCategorySlug; label: string }[] = [
+  { slug: 'all', label: 'Tất cả AI Skills' },
+  { slug: 'nckh-luan-an', label: 'NCKH & Luận án Tiến sĩ (Q1)' },
+  { slug: 'khoa-luan-giang-day', label: 'Khóa luận & Giảng dạy ĐH' },
+  { slug: 'kinh-te-tai-chinh', label: 'Kinh tế số & Phân tích Tài chính' },
+  { slug: 'blockchain-web3', label: 'Blockchain, Cardano & Web3' },
+  { slug: 'marketing-seo-geo', label: 'Digital Marketing & SEO/GEO' },
+  { slug: 'vibecode-automation', label: 'Vibe Coding & Tự động hóa' },
+];
+
+export const AI_SKILLS_CATALOG: AISkillItem[] = [
+  {
+    slug: 'nhan-xet-khoa-luan-ung-dung',
+    title: 'Nhận xét Khóa luận Ứng dụng (Gemini Skill)',
+    categorySlug: 'khoa-luan-giang-day',
+    categoryName: 'Khóa luận & Giảng dạy ĐH',
+    costType: 'points',
+    pointsCost: 10,
+    difficulty: 'Cơ bản',
+    shortDesc:
+      'Bộ quy tắc & prompt chấm nhận xét khóa luận hướng ứng dụng tại doanh nghiệp (Cơ sở lý luận – Thực trạng – Giải pháp).',
+    summary:
+      'Gói AI Skill đóng gói chuẩn giảng viên hướng dẫn và hội đồng chấm khóa luận đại học theo hướng ứng dụng thực tiễn tại doanh nghiệp.',
+    primaryTag: 'Khóa luận ĐH',
+    tags: ['Khóa luận', 'Thực tập', 'Giảng viên', 'Gemini'],
+    compatibleAgents: ['Gemini Gem', 'Claude', 'Antigravity', 'ChatGPT'],
+    formatLabel: 'Gói .ZIP + SKILL.md',
+    languageLabel: 'Tiếng Việt chuẩn ĐH',
+    isRecommended: true,
+    isMakeInVNE: true,
+    isAcademicEEAT: true,
+    downloadUrl: '/wp-content/uploads/2026/08/nhan-xet-khoa-luan-ung-dung-verGemini.zip',
+    adviceStudent:
+      'Sinh viên nên tự chạy skill này trên bản thảo chương 2 & chương 3 trước khi nộp giảng viên để phát hiện sớm giải pháp bị chung chung.',
+    benefitNote:
+      'Mở khóa bằng 10 VNE Points (kiếm miễn phí qua điểm danh & đọc bài trên VNEconomics, 0đ tiền thật).',
+    useCases: [
+      'Rà soát tính logic giữa phần Thực trạng tại Công ty X và Giải pháp đề xuất.',
+      'Chấm mức độ nghiêm trọng từng lỗi trình bày, số liệu và trích dẫn.',
+      'Sinh bảng góp ý chi tiết để giảng viên hoặc sinh viên sửa ngay.',
+    ],
+    pros: [
+      'Đánh giá đúng trình độ đại học, không áp đặt chuẩn tạp chí Q1 gây quá tải.',
+      'Tách rõ lỗi cấu trúc, lỗi số liệu tài chính và lỗi văn phong.',
+    ],
+    limits: [
+      'Cần cung cấp đủ văn bản chương Thực trạng & Giải pháp để AI đối chiếu chính xác.',
+    ],
+    steps: [
+      'Mở khóa gói Skill bằng 10 VNE Points và tải file .zip về máy.',
+      'Giải nén lấy file SKILL.md hoặc hướng dẫn cấu hình Gemini Gem.',
+      'Đính kèm file Word/PDF khóa luận của sinh viên vào phiên chat Agent.',
+      'Chạy lệnh nhận xét và nhận bảng lỗi phân theo mức độ ưu tiên.',
+    ],
+    samplePrompt:
+      'Hãy đóng vai giảng viên phản biện khóa luận tốt nghiệp hướng ứng dụng. Đọc bản thảo đính kèm, đối chiếu tính gắn kết giữa Thực trạng tại doanh nghiệp và Hệ thống giải pháp, phân loại lỗi Nghiêm trọng / Trung bình / Nhỏ và gợi ý cách sửa cụ thể cho sinh viên.',
+  },
+  {
+    slug: 'nhan-xet-khoa-luan-nghien-cuu',
+    title: 'Nhận xét Khóa luận Nghiên cứu Định lượng',
+    categorySlug: 'khoa-luan-giang-day',
+    categoryName: 'Khóa luận & Giảng dạy ĐH',
+    costType: 'points',
+    pointsCost: 10,
+    difficulty: 'Trung bình',
+    shortDesc:
+      'Đánh giá mô hình nghiên cứu, giả thuyết, thang đo, Cronbach Alpha, EFA, hồi quy & SEM cho khóa luận đại học.',
+    summary:
+      'Skill chuyên biệt cho khóa luận tốt nghiệp theo hướng nghiên cứu khoa học định lượng trong Kinh tế, Quản trị & Marketing.',
+    primaryTag: 'Định lượng SPSS/PLS',
+    tags: ['SPSS', 'SmartPLS', 'Mô hình', 'Giả thuyết'],
+    compatibleAgents: ['Claude', 'Antigravity', 'Gemini', 'ChatGPT'],
+    formatLabel: 'Gói .ZIP + SKILL.md',
+    languageLabel: 'Tiếng Việt chuẩn ĐH',
+    isRecommended: true,
+    isMakeInVNE: true,
+    isAcademicEEAT: true,
+    downloadUrl: '/wp-content/uploads/2026/08/nhan-xet-khoa-luan-nghien-cuu.zip',
+    adviceStudent:
+      'Dùng ngay sau khi chạy xong bảng kết quả SPSS/SmartPLS để kiểm tra xem diễn giải hệ số beta, R² và p-value có khớp bảng số liệu không.',
+    benefitNote:
+      'Mở khóa bằng 10 VNE Points hoàn toàn miễn phí tiền thật từ hệ thống Learn-to-Earn.',
+    useCases: [
+      'Kiểm tra sự nhất quán giữa Mục tiêu, Câu hỏi nghiên cứu, Giả thuyết và Mô hình.',
+      'Soi lỗi diễn giải Cronbach’s Alpha, EFA, VIF và mức ý nghĩa thống kê.',
+      'Gợi ý câu hỏi phản biện hội đồng bảo vệ khóa luận.',
+    ],
+    pros: [
+      'Bám sát cấu trúc 5 chương phổ biến tại các trường đại học kinh tế Việt Nam.',
+      'Chỉ rõ chỗ sai số liệu giữa bảng và đoạn văn thuyết minh.',
+    ],
+    limits: [
+      'Không tự chạy lại file dữ liệu gốc .sav/.csv nếu không cung cấp bảng kết quả.',
+    ],
+    steps: [
+      'Mở khóa Skill bằng 10 VNE Points và tải gói tài nguyên.',
+      'Nạp nội dung SKILL.md vào Agent hoặc System Prompt.',
+      'Dán chương 1–4 hoặc tải file PDF khóa luận định lượng.',
+      'Yêu cầu rà soát mô hình, giả thuyết và bảng kết quả kiểm định.',
+    ],
+    samplePrompt:
+      'Rà soát khóa luận nghiên cứu định lượng đính kèm: kiểm tra tính liên kết từ khoảng trống nghiên cứu đến mô hình và giả thuyết, đối chiếu số liệu bảng Cronbach Alpha / EFA / Hồi quy với phần biện luận, và liệt kê 5 câu hỏi hội đồng có thể hỏi.',
+  },
+  {
+    slug: 'q1-doctoral-dissertation',
+    title: 'Q1 Doctoral Dissertation & Reviewer Critique',
+    categorySlug: 'nckh-luan-an',
+    categoryName: 'NCKH & Luận án Tiến sĩ (Q1)',
+    costType: 'opensource',
+    pointsCost: 0,
+    difficulty: 'Nâng cao',
+    shortDesc:
+      'Phát triển, phản biện và nâng cấp đề cương/luận án tiến sĩ theo chuẩn tạp chí quốc tế Scopus Q1 trong Kinh tế & Quản trị.',
+    summary:
+      'Agent Skill đóng vai Giáo sư phản biện quốc tế (Reviewer #2) giúp stress-test đóng góp lý thuyết, thiết kế nghiên cứu và cấu trúc bài báo Q1.',
+    primaryTag: 'Q1 Journal',
+    tags: ['PhD', 'Scopus Q1', 'Reviewer #2', 'Lý thuyết nền'],
+    compatibleAgents: ['Claude Code', 'Antigravity', 'Cursor', 'ChatGPT'],
+    formatLabel: 'SKILL.md (Mã nguồn mở)',
+    languageLabel: 'Song ngữ Anh – Việt',
+    isRecommended: true,
+    isMakeInVNE: true,
+    isAcademicEEAT: true,
+    adviceStudent:
+      'Đặc biệt hữu ích cho nghiên cứu sinh trước buổi bảo vệ đề cương hoặc trước khi gửi bản thảo tới tạp chí Elsevier, Springer, Emerald.',
+    benefitNote: 'Miễn phí 100% — Mã nguồn mở chuẩn Agent Skill.',
+    useCases: [
+      'Thẩm định đóng góp lý thuyết (Theoretical Contribution) và khoảng trống tri thức.',
+      'Kiểm tra tính chặt chẽ của Endogeneity, Robustness Check và cơ chế trung gian/điều tiết.',
+      'Viết thư phản hồi Reviewer (Response to Reviewers) lịch sự và thuyết phục.',
+    ],
+    pros: [
+      'Áp dụng đúng tiêu chuẩn khắt khe của tạp chí Q1 Kinh doanh, Marketing & Kinh tế.',
+      'Phát hiện lỗ hổng lập luận trước khi nộp bài.',
+    ],
+    limits: [
+      'Đòi hỏi người dùng cung cấp rõ câu hỏi nghiên cứu và bối cảnh dữ liệu.',
+    ],
+    steps: [
+      'Sao chép mẫu SKILL.md hoặc prompt kích hoạt bên dưới.',
+      'Thiết lập vào Claude Project / Antigravity Skill / Custom GPT.',
+      'Cung cấp đề cương hoặc bản thảo chương luận án.',
+      'Nhận báo cáo phản biện theo từng tiêu chí Q1.',
+    ],
+    samplePrompt:
+      'Act as a senior Associate Editor & Reviewer #2 for a Q1 Business/Economics journal. Stress-test the attached proposal/manuscript on theoretical positioning, research gap, causal identification, and methodological rigor. Provide actionable major/minor revision points.',
+  },
+  {
+    slug: 'research-gap-finder',
+    title: 'Research Gap Finder & Stress-Test Q1',
+    categorySlug: 'nckh-luan-an',
+    categoryName: 'NCKH & Luận án Tiến sĩ (Q1)',
+    costType: 'free',
+    pointsCost: 0,
+    difficulty: 'Trung bình',
+    shortDesc:
+      'Phát hiện, phân loại và tự động kiểm định khoảng trống nghiên cứu qua 3 bài test (So What, Jargon Overlap, Feasibility).',
+    summary:
+      'Giúp nhà nghiên cứu tránh bẫy “chưa ai làm ở Việt Nam” để xây dựng khoảng trống lý thuyết thuyết phục và đề xuất mô hình khái niệm.',
+    primaryTag: 'Research Gap',
+    tags: ['Gap Finder', 'Conceptual Model', 'Scopus', 'WoS'],
+    compatibleAgents: ['Antigravity', 'Claude Code', 'Gemini', 'Perplexity'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'Song ngữ Anh – Việt',
+    isRecommended: true,
+    isMakeInVNE: true,
+    isAcademicEEAT: true,
+    adviceStudent:
+      'Hãy chạy 3 bài test So What, Jargon Overlap và Feasibility trước khi chốt tên đề tài luận văn/luận án.',
+    benefitNote: 'Miễn phí 0đ — Kích hoạt trực tiếp bằng prompt.',
+    useCases: [
+      'Tìm 3–5 hướng khoảng trống nghiên cứu có cơ sở từ tổng quan tài liệu.',
+      'Loại bỏ các gap trùng lặp khái niệm (Jargon Overlap).',
+      'Gợi ý thang đo chuẩn quốc tế và đoạn văn đặt vấn đề bằng tiếng Anh học thuật.',
+    ],
+    pros: [
+      'Ngăn ngừa lỗi chọn đề tài quá cũ hoặc thiếu tính khả thi thu thập dữ liệu.',
+      'Sinh sẵn khung biến độc lập – trung gian – điều tiết – phụ thuộc.',
+    ],
+    limits: [
+      'Nên kết hợp tìm kiếm Scopus/Google Scholar thực tế để xác nhận độ mới.',
+    ],
+    steps: [
+      'Chọn chủ đề nghiên cứu và từ khóa chính (ví dụ: AI Trust in FinTech).',
+      'Dán prompt kích hoạt Skill vào Agent có kết nối tìm kiếm.',
+      'Đánh giá các ứng viên Research Gap qua 3 bài test.',
+      'Chọn 1 mô hình khái niệm khả thi nhất để phát triển đề cương.',
+    ],
+    samplePrompt:
+      'Tìm khoảng trống nghiên cứu (Research Gap) chuẩn Q1 cho chủ đề: [ĐIỀN CHỦ ĐỀ]. Hãy stress-test mỗi gap qua 3 tiêu chí: (1) So What?, (2) Jargon Overlap, (3) Feasibility; sau đó đề xuất mô hình khái niệm, lý thuyết nền và thang đo gốc.',
+  },
+  {
+    slug: 'citation-integrity-check',
+    title: 'Citation Integrity & Anti-Hallucination Audit',
+    categorySlug: 'nckh-luan-an',
+    categoryName: 'NCKH & Luận án Tiến sĩ (Q1)',
+    costType: 'free',
+    pointsCost: 0,
+    difficulty: 'Cơ bản',
+    shortDesc:
+      'Kiểm tra từng trích dẫn trong bản thảo có thật không, đúng tác giả/năm không và có thực sự chứng minh cho nhận định đi kèm không.',
+    summary:
+      'Công cụ thiết yếu để phát hiện tài liệu tham khảo bị AI “bịa” (hallucination) hoặc trích dẫn sai ngữ cảnh trước khi nộp hội đồng.',
+    primaryTag: 'Kiểm chứng nguồn',
+    tags: ['Citation', 'DOI', 'Crossref', 'Anti-Fake'],
+    compatibleAgents: ['Antigravity', 'Claude Code', 'Gemini + Search'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'Song ngữ Anh – Việt',
+    isRecommended: true,
+    isMakeInVNE: true,
+    isAcademicEEAT: true,
+    adviceStudent:
+      'Không bao giờ nộp bài do AI hỗ trợ viết khi chưa chạy bước kiểm chứng DOI và nội dung gốc của từng trích dẫn.',
+    benefitNote: 'Miễn phí 100% cho cộng đồng nghiên cứu.',
+    useCases: [
+      'Đối chiếu tên bài báo, tác giả, năm, tạp chí với Crossref/DOI.',
+      'Kiểm tra lỗi gán nhầm luận điểm cho một tác giả khác.',
+      'Phát hiện trích dẫn thứ cấp chưa đọc tài liệu gốc.',
+    ],
+    pros: [
+      'Giảm tối đa rủi ro bị đánh rớt do tài liệu tham khảo không tồn tại.',
+      'Xuất báo cáo từng trích dẫn theo trạng thái: Xác thực / Sai lệch / Nghi vấn.',
+    ],
+    limits: [
+      'Agent cần quyền tra cứu web hoặc người dùng cung cấp DOI/abstract đối chiếu.',
+    ],
+    steps: [
+      'Trích danh sách câu có trích dẫn và mục Tài liệu tham khảo.',
+      'Kích hoạt Skill kiểm tra tính toàn vẹn trích dẫn.',
+      'Rà lại các mục bị gắn cờ Nghi vấn hoặc Sai lệch.',
+      'Thay thế bằng nguồn Q1 đã xác minh DOI.',
+    ],
+    samplePrompt:
+      'Hãy kiểm tra tính xác thực của toàn bộ trích dẫn trong đoạn văn và danh mục tài liệu tham khảo dưới đây: xác minh xem bài báo/DOI có tồn tại thật không, tác giả/năm có khớp không, và nguồn gốc có thực sự ủng hộ khẳng định được gán không.',
+  },
+  {
+    slug: 'ra-soat-trich-dan-apa',
+    title: 'Rà soát Trích dẫn Chuẩn APA 7 (Việt & Anh)',
+    categorySlug: 'khoa-luan-giang-day',
+    categoryName: 'Khóa luận & Giảng dạy ĐH',
+    costType: 'free',
+    pointsCost: 0,
+    difficulty: 'Cơ bản',
+    shortDesc:
+      'Chuẩn hóa hình thức APA 7th cho cả nguồn tiếng Việt & tiếng Anh, đối chiếu khớp 100% giữa trích dẫn trong bài và danh mục cuối bài.',
+    summary:
+      'Tự động bắt lỗi dấu phẩy, & vs và, et al., in nghiêng tên tạp chí, thiếu năm xuất bản và lệch danh mục tham khảo.',
+    primaryTag: 'APA 7th',
+    tags: ['APA 7', 'Trích dẫn', 'Tài liệu tham khảo'],
+    compatibleAgents: ['Claude', 'Gemini', 'ChatGPT', 'Antigravity'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'Tiếng Việt & Tiếng Anh',
+    isRecommended: true,
+    isMakeInVNE: true,
+    isAcademicEEAT: true,
+    adviceStudent:
+      'Rất phù hợp để dọn sạch lỗi trình bày APA 7 trong 10 phút trước khi xuất file Word nộp khoa.',
+    benefitNote: 'Miễn phí 0đ — Có thể chạy trực tiếp trên AI BYOK Lab.',
+    useCases: [
+      'Kiểm tra độ khớp 1-1 giữa in-text citation và Reference list.',
+      'Chuẩn hóa cách viết tên tác giả Việt Nam và nguồn cơ quan nhà nước theo APA 7.',
+      'Sắp xếp lại danh mục theo thứ tự bảng chữ cái và gợi ý hanging indent.',
+    ],
+    pros: [
+      'Xử lý tốt cả tài liệu pháp quy tiếng Việt, báo cáo bộ ngành và bài báo quốc tế.',
+    ],
+    limits: [
+      'Nếu bản thảo quá dài (>100 trang), nên chia theo từng chương khi dán.',
+    ],
+    steps: [
+      'Copy danh mục tài liệu tham khảo và các đoạn có trích dẫn.',
+      'Kích hoạt Skill rà soát APA 7.',
+      'Nhận bảng sửa chi tiết từng dòng bị sai định dạng.',
+      'Áp dụng bản danh mục đã chuẩn hóa vào Word.',
+    ],
+    samplePrompt:
+      'Rà soát trọn gói phần trích dẫn theo chuẩn APA 7 cho văn bản sau: (1) kiểm tra độ khớp giữa trích dẫn trong bài và danh mục tài liệu tham khảo, (2) sửa lỗi định dạng APA 7 cho cả nguồn tiếng Việt và tiếng Anh, (3) liệt kê các nguồn thiếu thông tin.',
+  },
+  {
+    slug: 'academic-english-check',
+    title: 'Academic English Register & Tone Polisher',
+    categorySlug: 'nckh-luan-an',
+    categoryName: 'NCKH & Luận án Tiến sĩ (Q1)',
+    costType: 'free',
+    pointsCost: 0,
+    difficulty: 'Cơ bản',
+    shortDesc:
+      'Kiểm tra văn phong học thuật tiếng Anh cho bài báo khoa học & luận án, khử giọng văn nói hoặc văn phong “sặc mùi AI”.',
+    summary:
+      'Nâng cấp câu văn tiếng Anh lên đúng chuẩn học thuật tự nhiên, tránh từ sáo rỗng (delve, tapestry, landscape) và giữ nguyên ý nghĩa khoa học.',
+    primaryTag: 'Academic English',
+    tags: ['Proofread', 'Manuscript', 'De-AI Tone', 'Q1'],
+    compatibleAgents: ['Claude', 'Gemini', 'ChatGPT', 'Antigravity'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English (Academic)',
+    isRecommended: false,
+    isMakeInVNE: true,
+    isAcademicEEAT: true,
+    adviceStudent:
+      'Đừng dùng lệnh "rewrite to sound fancy" vì dễ bị từ ngữ hoa mỹ kiểu AI; Skill này ưu tiên câu ngắn, chủ ngữ rõ và hedging chuẩn mực.',
+    benefitNote: 'Miễn phí 0đ.',
+    useCases: [
+      'Biên tập lại Abstract, Introduction và Discussion trước khi nộp tạp chí.',
+      'Thay thế các cụm văn nói (a lot of, very big) bằng cấu trúc học thuật.',
+      'Kiểm soát mức độ khẳng định (hedging: suggests, indicates thay vì proves).',
+    ],
+    pros: [
+      'Giải thích rõ vì sao chỗ đó chưa chuẩn học thuật để tác giả tự học.',
+    ],
+    limits: [
+      'Chỉ chỉnh ngôn ngữ và văn phong, không đánh giá thiết kế nghiên cứu.',
+    ],
+    steps: [
+      'Dán từng mục (Abstract / Intro / Results) bằng tiếng Anh.',
+      'Chạy Skill kiểm tra Academic Register.',
+      'Đối chiếu 2 phương án sửa gợi ý và chọn câu sát ý nhất.',
+    ],
+    samplePrompt:
+      'Polish the academic English register of the following manuscript excerpt for a Q1 journal. Remove conversational phrasing and overused AI clichés (e.g., delve, landscape, crucial), improve hedging and conciseness, and explain each key change.',
+  },
+  {
+    slug: 'phan-bien-de-tai-nckh',
+    title: 'Phản biện Đề tài NCKH Cấp Cơ sở (5 Chương)',
+    categorySlug: 'khoa-luan-giang-day',
+    categoryName: 'Khóa luận & Giảng dạy ĐH',
+    costType: 'free',
+    pointsCost: 0,
+    difficulty: 'Trung bình',
+    shortDesc:
+      'Xuất bảng sửa lỗi theo từng trang (vị trí, lỗi, nguyên nhân, cách sửa) kèm ngân hàng đoạn văn mẫu cho báo cáo nghiệm thu đề tài NCKH.',
+    summary:
+      'Thiết kế riêng cho giảng viên và nhóm nghiên cứu làm đề tài NCKH cấp trường/khoa cần chuẩn bị hồ sơ nghiệm thu.',
+    primaryTag: 'Đề tài NCKH',
+    tags: ['Nghiệm thu', 'Bảng lỗi', '5 Chương'],
+    compatibleAgents: ['Claude', 'Gemini', 'Antigravity'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'Tiếng Việt',
+    isRecommended: false,
+    isMakeInVNE: true,
+    isAcademicEEAT: true,
+    adviceStudent:
+      'Phù hợp cho cả sinh viên làm NCKH sinh viên (Eurêka) lẫn giảng viên viết báo cáo tổng kết đề tài cấp cơ sở.',
+    benefitNote: 'Miễn phí 0đ.',
+    useCases: [
+      'Tạo bảng tổng hợp lỗi theo số trang để nhóm nghiên cứu phân công sửa.',
+      'Dự đoán 5–7 câu hỏi phản biện của hội đồng nghiệm thu.',
+      'Cung cấp đoạn văn nối chuyển tiếp mượt mà giữa các chương.',
+    ],
+    pros: [
+      'Cấu trúc bảng sửa lỗi cực kỳ trực quan, dễ theo dõi tiến độ.',
+    ],
+    limits: [
+      'Cần bản thảo có đánh số trang hoặc chia rõ đề mục.',
+    ],
+    steps: [
+      'Tải lên file báo cáo đề tài NCKH.',
+      'Kích hoạt Skill phản biện đề tài cấp cơ sở.',
+      'Xuất bảng lỗi theo trang và chỉnh sửa lần lượt.',
+    ],
+    samplePrompt:
+      'Hãy phản biện báo cáo đề tài NCKH cấp cơ sở đính kèm theo cấu trúc 5 chương. Xuất ra bảng sửa lỗi gồm: Vị trí trang/mục | Lỗi cụ thể | Nguyên nhân | Cách sửa + kèm 5 câu hỏi hội đồng nghiệm thu có thể đặt ra.',
+  },
+  {
+    slug: 'doi-chieu-tai-lieu-paper',
+    title: 'Đối chiếu Bài báo Khoa học với Đề cương',
+    categorySlug: 'nckh-luan-an',
+    categoryName: 'NCKH & Luận án Tiến sĩ (Q1)',
+    costType: 'free',
+    pointsCost: 0,
+    difficulty: 'Cơ bản',
+    shortDesc:
+      'Đọc nhanh bài báo PDF, tóm tắt cốt lõi và đối chiếu xem kế thừa được biến số, thang đo hay phát hiện mâu thuẫn nào với đề cương.',
+    summary:
+      'Rút ngắn 70% thời gian sàng lọc tài liệu khi làm Literature Review bằng bảng đối chiếu trực tiếp với đề tài của bạn.',
+    primaryTag: 'Literature Review',
+    tags: ['Đọc bài báo', 'PDF Paper', 'Ma trận tổng quan'],
+    compatibleAgents: ['NotebookLM', 'Claude', 'Gemini', 'Antigravity'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'Tiếng Việt & Anh',
+    isRecommended: true,
+    isMakeInVNE: true,
+    isAcademicEEAT: true,
+    adviceStudent:
+      'Luôn gửi kèm 1 đoạn tóm tắt đề tài của bạn cùng file PDF bài báo để AI lọc đúng những gì bạn cần kế thừa.',
+    benefitNote: 'Miễn phí 0đ.',
+    useCases: [
+      'Tóm tắt mục tiêu, mẫu dữ liệu, phương pháp và kết quả chính của paper.',
+      'Xác định rõ: Kế thừa được gì (biến, thang đo, lập luận) và Không kế thừa được gì.',
+      'Phát hiện mâu thuẫn giả thuyết để làm điểm nhấn cho phần bàn luận.',
+    ],
+    pros: [
+      'Tránh tình trạng đọc lan man hàng chục bài báo mà không biết ghép vào đâu.',
+    ],
+    limits: [
+      'Chỉ phân tích trên nội dung bài báo được cung cấp.',
+    ],
+    steps: [
+      'Dán tóm tắt đề cương của bạn.',
+      'Đính kèm PDF hoặc toàn văn bài báo khoa học.',
+      'Chạy lệnh đối chiếu và lưu kết quả vào ma trận tổng quan.',
+    ],
+    samplePrompt:
+      'Đọc bài báo khoa học đính kèm, tóm tắt ngắn gọn (Bối cảnh, Lý thuyết, Mẫu, Phương pháp, Kết quả chính), sau đó đối chiếu với đề cương của tôi [MÔ TẢ ĐỀ CƯƠNG] để chỉ rõ: (1) Kế thừa được gì, (2) Không kế thừa được gì, (3) Có mâu thuẫn gì không.',
+  },
+  {
+    slug: 'find-citation-support',
+    title: 'Tìm Nguồn Học thuật Chống lưng Luận điểm',
+    categorySlug: 'nckh-luan-an',
+    categoryName: 'NCKH & Luận án Tiến sĩ (Q1)',
+    costType: 'free',
+    pointsCost: 0,
+    difficulty: 'Cơ bản',
+    shortDesc:
+      'Tìm bài báo Q1, tổng quan hệ thống hoặc báo cáo tổ chức quốc tế (WB, IMF, OECD) làm cơ sở khoa học cho khẳng định trong bài.',
+    summary:
+      'Biến các câu viết mang tính cảm tính chủ quan thành lập luận có dẫn chứng học thuật vững chắc.',
+    primaryTag: 'Tìm Citation',
+    tags: ['Q1 Source', 'OECD/IMF', 'Literature Support'],
+    compatibleAgents: ['Perplexity', 'Gemini + Search', 'Antigravity'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'Song ngữ Anh – Việt',
+    isRecommended: false,
+    isMakeInVNE: true,
+    isAcademicEEAT: true,
+    adviceStudent:
+      'Bắt buộc mở kiểm tra lại link/DOI nguồn do AI gợi ý trước khi đưa vào bài viết chính thức.',
+    benefitNote: 'Miễn phí 0đ.',
+    useCases: [
+      'Tìm nguồn số liệu vĩ mô từ World Bank, IMF, UNCTAD, Tổng cục Thống kê.',
+      'Tìm bài báo nền tảng chứng minh mối quan hệ giữa hai biến số kinh tế.',
+    ],
+    pros: [
+      'Gợi ý đúng từ khóa tìm kiếm học thuật nếu bạn chưa biết thuật ngữ tiếng Anh chuẩn.',
+    ],
+    limits: [
+      'Cần Agent có công cụ tìm kiếm internet trực tiếp.',
+    ],
+    steps: [
+      'Đánh dấu các câu khẳng định chưa có nguồn trong bản thảo.',
+      'Gửi câu văn cho Agent cùng yêu cầu tìm nguồn uy tín.',
+      'Kiểm tra DOI/URL gốc rồi chèn trích dẫn APA 7.',
+    ],
+    samplePrompt:
+      'Tôi có câu nhận định sau trong đề cương/bài báo: “[DÁN CÂU VĂN]”. Hãy tìm 3 nguồn học thuật uy tín (tạp chí Q1, systematic review hoặc báo cáo IMF/World Bank/OECD) có thật để làm cơ sở khoa học cho câu này, kèm DOI/link và cách diễn đạt lại cho khách quan.',
+  },
+  {
+    slug: 'vne-macro-market-analyst',
+    title: 'Chuyên viên Phân tích Vĩ mô & Thị trường VN',
+    categorySlug: 'kinh-te-tai-chinh',
+    categoryName: 'Kinh tế số & Phân tích Tài chính',
+    costType: 'free',
+    pointsCost: 0,
+    difficulty: 'Cơ bản',
+    shortDesc:
+      'Phân tích biến động giá vàng SJC, tỷ giá USD/VND, lãi suất ngân hàng và VN-Index theo khung kinh tế vĩ mô.',
+    summary:
+      'Tích hợp tư duy phân tích liên thị trường (Intermarket Analysis) giúp đọc hiểu dữ liệu tại Market Data Hub của VNEconomics.',
+    primaryTag: 'Kinh tế Vĩ mô',
+    tags: ['Vàng SJC', 'Tỷ giá', 'Lãi suất', 'VN30'],
+    compatibleAgents: ['VNE AI BYOK Lab', 'Gemini', 'Claude', 'ChatGPT'],
+    formatLabel: 'SKILL.md + Market Context',
+    languageLabel: 'Tiếng Việt',
+    isRecommended: true,
+    isMakeInVNE: true,
+    isAcademicEEAT: false,
+    adviceStudent:
+      'Kết hợp trực tiếp số liệu từ các trang Giá vàng, Tỷ giá, Lãi suất trên VNEconomics để có báo cáo thực tế.',
+    benefitNote: 'Miễn phí 0đ — Tích hợp sẵn trên trang Thị trường & AI Lab.',
+    useCases: [
+      'So sánh chênh lệch giá vàng trong nước – thế giới và tác động tỷ giá.',
+      'Phân tích ảnh hưởng của lãi suất Fed và lãi suất huy động VN đến dòng tiền chứng khoán.',
+      'Tóm tắt bản tin tài chính tuần cho báo cáo môn Kinh tế vĩ mô.',
+    ],
+    pros: [
+      'Cấu trúc phân tích rõ nguyên nhân – cơ chế truyền dẫn – kịch bản rủi ro.',
+    ],
+    limits: [
+      'Chỉ phục vụ nghiên cứu và học tập, không phải khuyến nghị đầu tư tài chính.',
+    ],
+    steps: [
+      'Lấy số liệu mới nhất từ mục Thị trường trên VNEconomics.',
+      'Dán số liệu vào Agent với prompt phân tích vĩ mô.',
+      'Nhận báo cáo 3 kịch bản (Tích cực / Cơ sở / Thận trọng).',
+    ],
+    samplePrompt:
+      'Đóng vai Chuyên viên Phân tích Vĩ mô tại VNEconomics. Dựa trên số liệu hiện tại [GIÁ VÀNG / TỶ GIÁ / LÃI SUẤT], hãy phân tích mối liên hệ truyền dẫn giữa chính sách tiền tệ quốc tế (Fed), tỷ giá USD/VND và dòng vốn vào chứng khoán/tài sản số tại Việt Nam. Lưu ý: chỉ mang tính giáo dục, không khuyến nghị đầu tư.',
+  },
+  {
+    slug: 'excel-financial-modeling-agent',
+    title: 'Financial Modeling & Data Cleaning Agent',
+    categorySlug: 'kinh-te-tai-chinh',
+    categoryName: 'Kinh tế số & Phân tích Tài chính',
+    costType: 'opensource',
+    pointsCost: 0,
+    difficulty: 'Trung bình',
+    shortDesc:
+      'Hướng dẫn AI Agent xử lý file Excel/CSV thô, chuẩn hóa bảng báo cáo tài chính, tính NPV/IRR/WACC và tạo biểu đồ.',
+    summary:
+      'Skill chuẩn hóa quy trình xử lý dữ liệu bảng tính doanh nghiệp bằng Python/Excel mà không làm sai lệch công thức gốc.',
+    primaryTag: 'Excel & Tài chính',
+    tags: ['Excel', 'DCF', 'NPV/IRR', 'Pandas'],
+    compatibleAgents: ['Claude Code', 'Antigravity', 'Cursor', 'ChatGPT Data Analyst'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'Song ngữ Anh – Việt',
+    isRecommended: false,
+    isMakeInVNE: false,
+    isAcademicEEAT: false,
+    adviceStudent:
+      'Yêu cầu Agent luôn dùng công thức Excel động (=SUM, =NPV, =IRR) thay vì điền số cứng.',
+    benefitNote: 'Miễn phí 100%.',
+    useCases: [
+      'Làm sạch dữ liệu khảo sát hoặc báo cáo tài chính xuất từ phần mềm kế toán.',
+      'Xây dựng bảng dòng tiền dự án đầu tư (DCF, NPV, IRR, Payback Period).',
+    ],
+    pros: [
+      'Giảm lỗi tính tay và chuẩn hóa định dạng bảng biểu chuyên nghiệp.',
+    ],
+    limits: [
+      'Cần kiểm tra lại giả định tăng trưởng và chi phí vốn WACC.',
+    ],
+    steps: [
+      'Cung cấp file .xlsx/.csv hoặc mô tả các cột dữ liệu.',
+      'Kích hoạt Skill Financial Modeling.',
+      'Kiểm tra công thức và xuất file báo cáo hoàn chỉnh.',
+    ],
+    samplePrompt:
+      'Hãy xử lý tập dữ liệu tài chính đính kèm: làm sạch các hàng trống/lỗi định dạng, xây dựng bảng tính dòng tiền (Cash Flow) 5 năm với công thức Excel động tính NPV, IRR và phân tích độ nhạy theo 2 biến (Doanh thu & WACC).',
+  },
+  {
+    slug: 'cardano-web3-research-agent',
+    title: 'Cardano & Web3 Governance Research Agent',
+    categorySlug: 'blockchain-web3',
+    categoryName: 'Blockchain, Cardano & Web3',
+    costType: 'free',
+    pointsCost: 0,
+    difficulty: 'Trung bình',
+    shortDesc:
+      'Tra cứu kiến thức eUTxO, Plutus, CIP-30, dRep Governance (Voltaire) và phân tích mô hình tokenomics bền vững.',
+    summary:
+      'Kết hợp kho 219 thuật ngữ Từ điển Cardano trên VNEconomics giúp sinh viên và nhà phát triển hiểu sâu kiến trúc Cardano & Web3.',
+    primaryTag: 'Cardano & Web3',
+    tags: ['Cardano', 'eUTxO', 'CIP-30', 'dRep'],
+    compatibleAgents: ['VNE AI BYOK Lab', 'Antigravity', 'Claude', 'Gemini'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'Tiếng Việt & Anh',
+    isRecommended: true,
+    isMakeInVNE: true,
+    isAcademicEEAT: true,
+    adviceStudent:
+      'Rất hữu ích khi học khóa Plutus – Blockchain Cardano trên Học viện VNEconomics hoặc chuẩn bị làm bài thi chứng chỉ NFT.',
+    benefitNote: 'Miễn phí 0đ — Đồng bộ cùng Cardano Hub Testnet.',
+    useCases: [
+      'So sánh mô hình tài khoản (Account-based EVM) và mô hình eUTxO (Cardano).',
+      'Phân tích đề xuất quản trị phi tập trung Catalyst & dRep.',
+      'Thiết kế bài toán ứng dụng Blockchain truy xuất nguồn gốc, chứng chỉ số.',
+    ],
+    pros: [
+      'Thuật ngữ chuẩn xác theo từ điển chuyên ngành Cardano đã biên tập.',
+    ],
+    limits: [
+      'Luôn thử nghiệm hợp đồng thông minh trên Testnet (Preprod/Sepolia), không dùng Mainnet khi học.',
+    ],
+    steps: [
+      'Mở Cardano Hub hoặc AI Lab trên VNEconomics.',
+      'Dán prompt nghiên cứu Web3/Cardano.',
+      'Thực hành kết nối ví CIP-30 trên mạng Preprod Testnet.',
+    ],
+    samplePrompt:
+      'Giải thích cơ chế [eUTxO / CIP-30 / dRep Governance] trên Cardano bằng ngôn ngữ dễ hiểu cho sinh viên Kinh tế số, so sánh với mô hình EVM của Ethereum và nêu 1 ứng dụng thực tế tại Việt Nam (ví dụ chứng chỉ học tập NFT hoặc truy xuất nguồn gốc).',
+  },
+  {
+    slug: 'smart-contract-testnet-auditor',
+    title: 'Solidity Testnet Security & NFT Metadata Agent',
+    categorySlug: 'blockchain-web3',
+    categoryName: 'Blockchain, Cardano & Web3',
+    costType: 'opensource',
+    pointsCost: 0,
+    difficulty: 'Nâng cao',
+    shortDesc:
+      'Rà soát lỗ hổng cơ bản (Reentrancy, Access Control, Nonce Replay) cho hợp đồng ERC-20/ERC-721 trên mạng Testnet.',
+    summary:
+      'Skill hỗ trợ sinh viên lập trình Web3 kiểm tra bảo mật hợp đồng thông minh và chuẩn JSON Metadata OpenSea/ERC-721.',
+    primaryTag: 'Smart Contract',
+    tags: ['Solidity', 'ERC-721', 'Testnet', 'Security'],
+    compatibleAgents: ['Claude Code', 'Cursor', 'Antigravity'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'Song ngữ Anh – Việt',
+    isRecommended: false,
+    isMakeInVNE: false,
+    isAcademicEEAT: false,
+    adviceStudent:
+      'Luôn kiểm tra kỹ hàm mint có kiểm soát chữ ký/nonce và chặn Mainnet khi chạy môi trường học tập.',
+    benefitNote: 'Miễn phí 100% — Mã nguồn mở.',
+    useCases: [
+      'Audit nhanh hợp đồng Solidity trước khi deploy lên Sepolia/Polygon Amoy.',
+      'Sinh file JSON metadata chuẩn ERC-721 cho chứng chỉ khóa học.',
+    ],
+    pros: [
+      'Chỉ rõ từng dòng code có nguy cơ lỗi logic hoặc tràn quyền.',
+    ],
+    limits: [
+      'Không thay thế kiểm toán bảo mật chuyên nghiệp cho sản phẩm Mainnet có tài sản thật.',
+    ],
+    steps: [
+      'Mở file .sol trong IDE (Cursor/VS Code/Antigravity).',
+      'Kích hoạt Skill Audit Smart Contract.',
+      'Sửa các cảnh báo High/Medium và chạy lại unit test.',
+    ],
+    samplePrompt:
+      'Kiểm tra file hợp đồng Solidity sau theo checklist bảo mật (Access Control, Reentrancy, Nonce/Signature Replay, Gas optimization) dành cho môi trường Testnet ERC-721. Liệt kê lỗ hổng theo mức độ và đề xuất bản vá.',
+  },
+  {
+    slug: 'seo-geo-aeo-content-architect',
+    title: 'SEO + GEO + AEO Content Architect',
+    categorySlug: 'marketing-seo-geo',
+    categoryName: 'Digital Marketing & SEO/GEO',
+    costType: 'free',
+    pointsCost: 0,
+    difficulty: 'Cơ bản',
+    shortDesc:
+      'Tối ưu bài viết vừa lên top Google Search (SEO), vừa được ChatGPT/Perplexity/Google AI Overview trích dẫn (GEO/AEO).',
+    summary:
+      'Bộ khung viết bài chuẩn cấu trúc Topic Pillar – TL;DR Answer Box – FAQ Schema JSON-LD mà VNEconomics đang áp dụng.',
+    primaryTag: 'SEO • GEO • AEO',
+    tags: ['SEO', 'GEO', 'AEO', 'Schema JSON-LD'],
+    compatibleAgents: ['Claude', 'Gemini', 'ChatGPT', 'Antigravity'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'Tiếng Việt',
+    isRecommended: true,
+    isMakeInVNE: true,
+    isAcademicEEAT: true,
+    adviceStudent:
+      'Hãy đặt 1 khối TL;DR 40–60 từ trả lời trực diện câu hỏi ngay đầu bài viết để AI Search dễ trích dẫn nhất.',
+    benefitNote: 'Miễn phí 0đ.',
+    useCases: [
+      'Xây dựng dàn ý bài viết Pillar và bài vệ tinh theo Topical Authority.',
+      'Viết đoạn định nghĩa súc tích chuẩn AEO (Answer Engine Optimization).',
+      'Sinh mã JSON-LD Article + FAQPage chuẩn Google Rich Results.',
+    ],
+    pros: [
+      'Tăng khả năng xuất hiện trong câu trả lời của các công cụ AI Search.',
+    ],
+    limits: [
+      'Cần biên tập lại ví dụ thực tế tại Việt Nam để đảm bảo tính độc bản EEAT.',
+    ],
+    steps: [
+      'Xác định từ khóa chính và câu hỏi người dùng thường tìm.',
+      'Chạy Skill để lập dàn ý chuẩn SEO + GEO + AEO.',
+      'Bổ sung số liệu thực tế và gắn Schema JSON-LD.',
+    ],
+    samplePrompt:
+      'Hãy lập dàn ý và viết đoạn mở đầu chuẩn SEO + GEO + AEO cho chủ đề: “[CHỦ ĐỀ]”. Bao gồm: (1) H1 chứa từ khóa, (2) Khối TL;DR trả lời trực diện 50 chữ để AI trích dẫn, (3) Cấu trúc H2/H3 theo câu hỏi người dùng, (4) 3 câu FAQ kèm Schema JSON-LD.',
+  },
+  {
+    slug: 'digital-marketing-campaign-planner',
+    title: 'AI Digital Marketing Campaign Planner',
+    categorySlug: 'marketing-seo-geo',
+    categoryName: 'Digital Marketing & SEO/GEO',
+    costType: 'free',
+    pointsCost: 0,
+    difficulty: 'Cơ bản',
+    shortDesc:
+      'Lập kế hoạch truyền thông đa kênh (Facebook, TikTok, SEO, Email), xác định Customer Persona và KPI theo mô hình phễu.',
+    summary:
+      'Đồng hành cùng các khóa học Digital Marketing trên Học viện VNEconomics để sinh viên thực hành lập Media Plan nhanh chóng.',
+    primaryTag: 'Marketing Plan',
+    tags: ['Media Plan', 'Persona', 'Funnel', 'KPI'],
+    compatibleAgents: ['Gemini', 'Claude', 'ChatGPT'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'Tiếng Việt',
+    isRecommended: false,
+    isMakeInVNE: true,
+    isAcademicEEAT: false,
+    adviceStudent:
+      'Luôn nhập ngân sách giả định và sản phẩm cụ thể để AI chia tỷ lệ kênh hợp lý thay vì liệt kê chung chung.',
+    benefitNote: 'Miễn phí 0đ.',
+    useCases: [
+      'Xây dựng chân dung khách hàng mục tiêu (Insight, Pain points, Trigger).',
+      'Phân bổ nội dung theo 3 tầng phễu Awareness – Consideration – Conversion.',
+    ],
+    pros: [
+      'Dễ áp dụng cho đồ án môn học Digital Marketing & Truyền thông tích hợp.',
+    ],
+    limits: [
+      'Số liệu CPC/CPM thực tế cần đối chiếu lại theo ngành hàng tại Việt Nam.',
+    ],
+    steps: [
+      'Mô tả sản phẩm, đối tượng khách hàng và ngân sách dự kiến.',
+      'Chạy Skill lập kế hoạch chiến dịch.',
+      'Tinh chỉnh lịch đăng bài và chỉ số đo lường KPI.',
+    ],
+    samplePrompt:
+      'Lập kế hoạch Digital Marketing 4 tuần cho sản phẩm [TÊN SẢN PHẨM], ngân sách [X TRIỆU VNĐ], tệp khách hàng [ĐỐI TƯỢNG]. Xuất ra bảng: Giai đoạn phễu | Kênh chính | Thông điệp | Định dạng nội dung | KPI đo lường.',
+  },
+  {
+    slug: 'vibecode-frontend-taste',
+    title: 'Vibe Coding Anti-Slop UI/UX Frontend Skill',
+    categorySlug: 'vibecode-automation',
+    categoryName: 'Vibe Coding & Tự động hóa',
+    costType: 'opensource',
+    pointsCost: 0,
+    difficulty: 'Trung bình',
+    shortDesc:
+      'Quy tắc thiết kế giao diện React + Tailwind sắc nét, phân cấp thị giác rõ ràng, tránh lỗi giao diện AI đại trà.',
+    summary:
+      'Bộ hướng dẫn cho Agent lập trình (Antigravity, Cursor, Claude Code) giúp tạo website hiện đại, responsive và chuẩn accessibility.',
+    primaryTag: 'Vibe Coding UI',
+    tags: ['React', 'Tailwind', 'UI/UX', 'Frontend'],
+    compatibleAgents: ['Antigravity', 'Cursor', 'Claude Code', 'Windsurf'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English / Việt',
+    isRecommended: true,
+    isMakeInVNE: false,
+    isAcademicEEAT: false,
+    adviceStudent:
+      'Kết hợp cùng hệ sinh thái Website Vibecode trên store.vneconomics.com để học cách build app thực tế.',
+    benefitNote: 'Miễn phí 100% — Mã nguồn mở.',
+    useCases: [
+      'Thiết kế landing page, dashboard dữ liệu hoặc trang thương mại điện tử.',
+      'Tối ưu typography, khoảng trắng, dark mode và responsive đa màn hình.',
+    ],
+    pros: [
+      'Loại bỏ các mẫu thiết kế rập khuôn, thiếu cân đối của AI mặc định.',
+    ],
+    limits: [
+      'Cần xem trực tiếp trên trình duyệt để tinh chỉnh khoảng cách thực tế.',
+    ],
+    steps: [
+      'Lưu quy tắc thiết kế vào file SKILL.md hoặc .cursorrules.',
+      'Mô tả sản phẩm và phong cách màu sắc mong muốn.',
+      'Yêu cầu Agent build component và kiểm tra trên localhost.',
+    ],
+    samplePrompt:
+      'Build a clean, responsive React + Tailwind CSS page for [PRODUCT]. Enforce clear typographic hierarchy, consistent spacing tokens, accessible contrast in both light and dark modes, zero horizontal overflow, and crisp data-dense cards.',
+  },
+  {
+    slug: 'create-word-academic-doc',
+    title: 'Xuất Tài liệu Word (.docx) Chuẩn Học thuật',
+    categorySlug: 'vibecode-automation',
+    categoryName: 'Vibe Coding & Tự động hóa',
+    costType: 'free',
+    pointsCost: 0,
+    difficulty: 'Cơ bản',
+    shortDesc:
+      'Tạo và định dạng file Microsoft Word (.docx) có trang bìa, bảng chuẩn APA, callout box và danh mục hanging indent.',
+    summary:
+      'Giúp AI Agent chuyển trực tiếp đề cương, báo cáo hoặc bài nghiên cứu từ Markdown sang file Word chuyên nghiệp.',
+    primaryTag: 'Word (.docx)',
+    tags: ['DOCX', 'APA Table', 'Báo cáo'],
+    compatibleAgents: ['Antigravity', 'Claude Code', 'Python Agent'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'Tiếng Việt',
+    isRecommended: false,
+    isMakeInVNE: true,
+    isAcademicEEAT: true,
+    adviceStudent:
+      'Rất tiết kiệm thời gian căn lề, làm bảng APA không kẻ dọc và thụt lề tài liệu tham khảo.',
+    benefitNote: 'Miễn phí 0đ.',
+    useCases: [
+      'Xuất đề cương luận văn/luận án ra file .docx hoàn chỉnh.',
+      'Định dạng báo cáo quản trị có mục lục và bảng số liệu sạch đẹp.',
+    ],
+    pros: [
+      'Tự động áp font Times New Roman / Calibri chuẩn nộp bài.',
+    ],
+    limits: [
+      'Cần môi trường Agent có quyền chạy script Python/Node (`python-docx` hoặc `docx`).',
+    ],
+    steps: [
+      'Chuẩn bị nội dung báo cáo dưới dạng văn bản hoặc Markdown.',
+      'Kích hoạt Skill tạo file .docx.',
+      'Mở file Word kết quả để kiểm tra trang bìa và ngắt trang.',
+    ],
+    samplePrompt:
+      'Hãy chuyển nội dung báo cáo sau thành file Microsoft Word (.docx) hoàn chỉnh với: trang bìa chuẩn học thuật, Heading phân cấp rõ, bảng số liệu chuẩn APA (chỉ kẻ ngang), và mục Tài liệu tham khảo định dạng hanging indent.',
+  },
+  {
+    slug: 'mcp-server-builder-agent',
+    title: 'MCP Server Builder (Kết nối Tool cho AI Agent)',
+    categorySlug: 'vibecode-automation',
+    categoryName: 'Vibe Coding & Tự động hóa',
+    costType: 'opensource',
+    pointsCost: 0,
+    difficulty: 'Nâng cao',
+    shortDesc:
+      'Hướng dẫn Agent tự viết Model Context Protocol (MCP) server bằng Python FastMCP hoặc TypeScript SDK để gọi API ngoài.',
+    summary:
+      'Chuẩn hóa cách kết nối AI Agent với cơ sở dữ liệu nội bộ, Google Sheets, hoặc API dữ liệu tài chính.',
+    primaryTag: 'MCP Server',
+    tags: ['MCP', 'FastMCP', 'TypeScript', 'Agent Tools'],
+    compatibleAgents: ['Antigravity', 'Claude Desktop', 'Cursor'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English / Việt',
+    isRecommended: false,
+    isMakeInVNE: false,
+    isAcademicEEAT: false,
+    adviceStudent:
+      'Dành cho bạn đã quen lập trình muốn cho AI Agent đọc dữ liệu thật từ API riêng.',
+    benefitNote: 'Miễn phí 100% — Mã nguồn mở.',
+    useCases: [
+      'Xây dựng tool cho Agent tra cứu giá chứng khoán hoặc dữ liệu MySQL nội bộ.',
+      'Đóng gói tài nguyên & prompt thành plugin dùng lại nhiều lần.',
+    ],
+    pros: [
+      'Tuân thủ chuẩn MCP mới nhất, dễ tích hợp vào nhiều IDE.',
+    ],
+    limits: [
+      'Cần chú ý bảo mật API key qua biến môi trường, không hardcode.',
+    ],
+    steps: [
+      'Xác định API hoặc dữ liệu muốn AI truy cập.',
+      'Yêu cầu Agent sinh MCP server theo chuẩn FastMCP / MCP SDK.',
+      'Khai báo server vào file cấu hình Agent và kiểm thử gọi tool.',
+    ],
+    samplePrompt:
+      'Design and implement a clean MCP server in TypeScript (or Python FastMCP) exposing tools to query [API/DATA SOURCE]. Include strict input schema validation, clear tool descriptions, error handling, and a README for connecting to Claude/Antigravity.',
+  },
+];
+
+export const SKILL_DIFFICULTY_LABELS: Record<'vi' | 'en', Record<SkillDifficulty, string>> = {
+  vi: {
+    'Cơ bản': 'Cơ bản',
+    'Trung bình': 'Trung bình',
+    'Nâng cao': 'Nâng cao',
+  },
+  en: {
+    'Cơ bản': 'Beginner',
+    'Trung bình': 'Intermediate',
+    'Nâng cao': 'Advanced',
+  },
+};
+
+export const SKILL_CATEGORIES_EN: Record<SkillCategorySlug, string> = {
+  all: 'All AI Skills',
+  'nckh-luan-an': 'Q1 Research & Doctoral Dissertations',
+  'khoa-luan-giang-day': 'Undergraduate Theses & Teaching',
+  'kinh-te-tai-chinh': 'Digital Economy & Financial Analysis',
+  'blockchain-web3': 'Blockchain, Cardano & Web3',
+  'marketing-seo-geo': 'Digital Marketing & SEO/GEO',
+  'vibecode-automation': 'Vibe Coding & Automation',
+};
+
+const AI_SKILLS_EN_MAP: Record<string, Partial<AISkillItem>> = {
+  'nhan-xet-khoa-luan-ung-dung': {
+    title: 'Applied Thesis Reviewer (Gemini Skill)',
+    shortDesc: 'Rulebook & prompt pack for reviewing applied undergraduate enterprise internship theses (Theory – Practice – Solutions).',
+    summary: 'Structured reviewer skill designed for academic advisors and grading panels evaluating applied enterprise graduation theses.',
+    primaryTag: 'Applied Thesis',
+    tags: ['Thesis', 'Internship', 'Faculty', 'Gemini'],
+    formatLabel: '.ZIP Pack + SKILL.md',
+    languageLabel: 'Vietnamese Academic / Bilingual',
+    adviceStudent: 'Run this skill on your findings and recommendations chapters before advisor submission to catch vague solutions early.',
+    benefitNote: 'Unlock with 10 VNE Points (earned free via reading and daily check-ins, $0 real money).',
+    useCases: ['Audit alignment between company diagnosis and proposed business solutions.', 'Score severity of formatting, data, and citation issues.', 'Generate a concrete revision table for students.'],
+    pros: ['Calibrated for undergraduate standards rather than over-demanding Q1 rules.', 'Separates structural, financial data, and tone issues clearly.'],
+    limits: ['Requires full text from the empirical situation and solution chapters.'],
+    steps: ['Unlock the package using 10 VNE Points and download the .zip.', 'Extract SKILL.md or configure Gemini Gem instructions.', 'Attach the Word/PDF thesis draft.', 'Run the review prompt to generate a prioritized fix table.'],
+    samplePrompt: 'Act as a faculty reviewer for an applied undergraduate thesis. Audit alignment between enterprise situational analysis and proposed solutions, classify issues (Critical / Moderate / Minor), and suggest actionable edits.',
+  },
+  'nhan-xet-khoa-luan-nghien-cuu': {
+    title: 'Quantitative Research Thesis Reviewer',
+    shortDesc: 'Evaluates research models, hypotheses, measurement scales, Cronbach Alpha, EFA, regression & SEM for theses.',
+    summary: 'Specialized evaluation skill for empirical quantitative theses in Economics, Business Administration, and Marketing.',
+    primaryTag: 'SPSS / PLS-SEM',
+    tags: ['SPSS', 'SmartPLS', 'Research Model', 'Hypotheses'],
+    formatLabel: '.ZIP Pack + SKILL.md',
+    languageLabel: 'Vietnamese / English Quantitative',
+    adviceStudent: 'Run immediately after exporting SPSS/SmartPLS tables to verify beta coefficients, R-squared, and p-values match narrative text.',
+    benefitNote: 'Unlock with 10 VNE Points ($0 real money via Learn-to-Earn).',
+    useCases: ['Check coherence across objectives, hypotheses, and conceptual framework.', 'Catch misinterpretations of Cronbach Alpha, EFA, VIF, and significance.', 'Generate mock defense committee questions.'],
+    pros: ['Follows standard 5-chapter empirical economics thesis structure.', 'Flags numeric discrepancies between tables and prose.'],
+    limits: ['Does not execute raw .sav/.csv files unless exported result tables are provided.'],
+    steps: ['Unlock with 10 VNE Points and download the bundle.', 'Load SKILL.md into your AI Agent.', 'Provide Chapters 1–4 or result tables.', 'Request model, hypothesis, and statistical audit.'],
+    samplePrompt: 'Audit the attached quantitative thesis: verify coherence from research gap to hypotheses and conceptual model, cross-check Cronbach Alpha / EFA / Regression numbers against interpretation, and list 5 likely defense questions.',
+  },
+  'q1-doctoral-dissertation': {
+    title: 'Q1 Doctoral Dissertation & Reviewer Critique',
+    shortDesc: 'Develop, critique, and elevate PhD proposals/dissertations to Scopus Q1 journal standards in Business & Economics.',
+    summary: 'Senior Associate Editor & Reviewer #2 persona that stress-tests theoretical positioning, endogeneity, and Q1 manuscript rigor.',
+    primaryTag: 'Q1 Journal',
+    tags: ['PhD', 'Scopus Q1', 'Reviewer #2', 'Theory'],
+    formatLabel: 'SKILL.md (Open Source)',
+    languageLabel: 'English & Bilingual',
+    adviceStudent: 'Ideal before doctoral proposal defense or submitting manuscripts to Elsevier, Springer, or Emerald journals.',
+    benefitNote: '100% Free — Open-Source Agent Skill.',
+    useCases: ['Evaluate theoretical contribution and research gap novelty.', 'Check endogeneity controls, robustness checks, and mediation/moderation.', 'Draft structured Response to Reviewers letters.'],
+    pros: ['Applies strict Q1 peer-review standards for management and economics.', 'Identifies causal and logic vulnerabilities before submission.'],
+    limits: ['Requires clear statement of research questions and empirical setting.'],
+    steps: ['Copy SKILL.md or sample prompt below.', 'Load into Claude Project / Antigravity Skill / Custom GPT.', 'Attach your proposal or manuscript chapter.', 'Receive a criterion-by-criterion Q1 critique report.'],
+  },
+  'research-gap-finder': {
+    title: 'Research Gap Finder & Stress-Test Q1',
+    shortDesc: 'Discovers, classifies, and stress-tests research gaps across 3 rigorous tests (So What, Jargon Overlap, Feasibility).',
+    summary: 'Helps researchers move beyond context-only gaps to build defensible theoretical contributions and conceptual models.',
+    primaryTag: 'Research Gap',
+    tags: ['Gap Finder', 'Conceptual Model', 'Scopus', 'WoS'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English / Bilingual',
+    adviceStudent: 'Always run So What, Jargon Overlap, and Feasibility tests before locking in a thesis topic.',
+    benefitNote: 'Free ($0) — Activate directly with the sample prompt.',
+    useCases: ['Surface 3–5 literature-grounded research gap candidates.', 'Eliminate redundant construct overlap.', 'Suggest validated scales and academic problem statements.'],
+    pros: ['Prevents choosing outdated or unfeasible data-collection topics.', 'Outputs IV–Mediator–Moderator–DV conceptual maps.'],
+    limits: ['Pair with live Scopus/Google Scholar queries to verify latest publications.'],
+    steps: ['Define your topic and core keywords.', 'Run the prompt inside a search-enabled agent.', 'Evaluate candidate gaps across the 3 stress tests.', 'Select the strongest conceptual model for your proposal.'],
+    samplePrompt: 'Identify Q1-grade research gaps for the topic: [INSERT TOPIC]. Stress-test each gap on (1) So What?, (2) Jargon Overlap, and (3) Feasibility; then propose a conceptual model, theoretical lens, and validated scales.',
+  },
+  'citation-integrity-check': {
+    title: 'Citation Integrity & Anti-Hallucination Audit',
+    shortDesc: 'Audits whether every citation exists, matches author/year metadata, and genuinely supports the attached claim.',
+    summary: 'Essential verification workflow to catch AI-fabricated references (hallucinations) and misattributions before review.',
+    primaryTag: 'Citation Audit',
+    tags: ['Citation', 'DOI', 'Crossref', 'Anti-Fake'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English / Bilingual',
+    adviceStudent: 'Never submit AI-assisted writing without verifying raw DOIs and primary source claims first.',
+    benefitNote: '100% Free ($0) for academic researchers.',
+    useCases: ['Cross-check paper titles, authors, years, and venues against Crossref/DOI.', 'Flag claims misattributed to unrelated studies.', 'Spot secondary citations needing primary verification.'],
+    pros: ['Eliminates rejection risks from fabricated references.', 'Outputs per-citation status: Verified / Mismatch / Suspect.'],
+    limits: ['Requires web lookup tools or user-supplied abstracts/DOIs.'],
+    steps: ['Paste claims with inline citations and the reference list.', 'Run the citation integrity skill.', 'Inspect flagged Suspect items.', 'Replace with DOI-verified Q1 sources.'],
+    samplePrompt: 'Audit the authenticity of every citation in the following text and reference list: verify whether each paper/DOI exists, whether author/year metadata matches, and whether the source truly supports the attributed claim.',
+  },
+  'ra-soat-trich-dan-apa': {
+    title: 'APA 7 Citation & Reference Auditor',
+    shortDesc: 'Standardizes APA 7th edition formatting and verifies 100% 1-to-1 matching between in-text citations and reference lists.',
+    summary: 'Automatically catches punctuation errors, & vs and, et al. rules, italicized journals, missing years, and orphan citations.',
+    primaryTag: 'APA 7th',
+    tags: ['APA 7', 'Citations', 'Bibliography'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English & Bilingual',
+    adviceStudent: 'Clean up your entire APA 7 reference list in 10 minutes before exporting your final document.',
+    benefitNote: 'Free ($0) — Runs directly in BYOK AI Lab.',
+    useCases: ['Verify strict 1-to-1 parity between in-text citations and reference list.', 'Standardize government reports and journal DOIs.', 'Sort bibliography alphabetically for hanging-indent export.'],
+    pros: ['Handles both international Q1 papers and regulatory reports cleanly.'],
+    limits: ['For long manuscripts (>100 pages), process chapter by chapter.'],
+    steps: ['Copy in-text citations and bibliography.', 'Run the APA 7 audit prompt.', 'Apply the line-by-line corrections.', 'Format hanging indents in Word.'],
+    samplePrompt: 'Audit the following text and references for strict APA 7th compliance: (1) check 1-to-1 parity between in-text citations and reference list, (2) fix punctuation, italics, et al., and DOI formatting, (3) flag missing metadata.',
+  },
+  'academic-english-check': {
+    title: 'Academic English Register & Tone Polisher',
+    shortDesc: 'Polishes academic English register for journal manuscripts while removing conversational tone and AI clichés.',
+    summary: 'Elevates sentences to crisp scholarly prose, eliminates buzzword fluff, and calibrates scientific hedging carefully.',
+    primaryTag: 'Academic English',
+    tags: ['Proofread', 'Manuscript', 'De-AI Tone', 'Q1'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English (Academic)',
+    adviceStudent: 'Avoid asking AI to "sound fancy"; this skill enforces concise active subjects and calibrated hedging.',
+    benefitNote: 'Free ($0).',
+    useCases: ['Polish Abstract, Introduction, and Discussion sections.', 'Replace informal idioms with formal scholarly phrasing.', 'Calibrate hedging (suggests, indicates instead of proves).'],
+    pros: ['Explains why each edit improves academic precision.'],
+    limits: ['Focuses on language and register, not empirical design.'],
+    steps: ['Paste one manuscript section.', 'Run Academic Register review.', 'Compare the suggested rewrites and accept the sharpest fit.'],
+  },
+  'phan-bien-de-tai-nckh': {
+    title: 'Institutional Research Project Reviewer (5 Chapters)',
+    shortDesc: 'Generates page-by-page error tables (location, flaw, root cause, fix) plus academic transition paragraphs.',
+    summary: 'Tailored for faculty and student teams preparing 5-chapter institutional research acceptance reports.',
+    primaryTag: 'Research Review',
+    tags: ['Acceptance Review', 'Error Table', '5 Chapters'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'Bilingual',
+    adviceStudent: 'Ideal for preparing final defense responses and proofreading committee reports.',
+    benefitNote: 'Free ($0).',
+    useCases: ['Create structured page-by-page error tracking tables.', 'Anticipate 5–7 review committee questions.', 'Generate smooth chapter transition paragraphs.'],
+    pros: ['Clean tabular audit format easy to assign across co-authors.'],
+    limits: ['Works best with clearly numbered headings or paginated drafts.'],
+    steps: ['Upload the research report draft.', 'Run the institutional project critique skill.', 'Resolve flagged items sequentially.'],
+    samplePrompt: 'Critique the attached 5-chapter institutional research report. Output a structured revision table with: Location | Specific Issue | Root Cause | Fix + 5 probable acceptance committee questions.',
+  },
+  'doi-chieu-tai-lieu-paper': {
+    title: 'Paper-to-Proposal Matrix Cross-Checker',
+    shortDesc: 'Summarizes PDF papers rapidly and maps what constructs, scales, or contradictions apply to your own study.',
+    summary: 'Cuts literature screening time by 70% via structured side-by-side comparison against your research proposal.',
+    primaryTag: 'Literature Review',
+    tags: ['Paper Summary', 'PDF Paper', 'Literature Matrix'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English & Bilingual',
+    adviceStudent: 'Always include a 1-paragraph summary of your proposal alongside the PDF so AI extracts what actually transfers.',
+    benefitNote: 'Free ($0).',
+    useCases: ['Summarize setting, sample, methods, and key findings.', 'Identify transferable constructs/scales vs non-transferable gaps.', 'Highlight hypothesis contradictions for discussion framing.'],
+    pros: ['Prevents aimless reading without mapping takeaways to your model.'],
+    limits: ['Analyzes strictly within the supplied paper content.'],
+    steps: ['Paste your short proposal abstract.', 'Attach the target PDF or text.', 'Run the comparison and log results into your synthesis matrix.'],
+    samplePrompt: 'Read the attached paper, summarize its context, theory, sample, methods, and findings, then compare against my proposal [DESCRIBE PROPOSAL] to specify: (1) What is transferable, (2) What is not, (3) Any conflicting findings.',
+  },
+  'find-citation-support': {
+    title: 'Scholarly Source Finder for Claims',
+    shortDesc: 'Finds Q1 papers, systematic reviews, or World Bank/IMF/OECD reports to substantiate conceptual arguments.',
+    summary: 'Transforms unsupported assertions into empirically grounded claims backed by credible literature.',
+    primaryTag: 'Find Citations',
+    tags: ['Q1 Source', 'OECD/IMF', 'Literature Support'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English & Bilingual',
+    adviceStudent: 'Always open and inspect suggested DOIs/URLs directly before citing them in your manuscript.',
+    benefitNote: 'Free ($0).',
+    useCases: ['Source macro indicators from World Bank, IMF, and UNCTAD.', 'Locate foundational papers supporting hypothesized relationships.'],
+    pros: ['Recommends exact scholarly search terms alongside verified leads.'],
+    limits: ['Requires an agent equipped with live web search tools.'],
+    steps: ['Flag unsupported claims in your draft.', 'Submit claims to the source-finder prompt.', 'Inspect original DOIs and insert APA 7 citations.'],
+    samplePrompt: 'Find 3 genuine authoritative sources (Q1 journals, systematic reviews, or IMF/World Bank/OECD reports) with real DOIs/URLs supporting this claim: “[PASTE CLAIM]”, and rewrite the sentence objectively.',
+  },
+  'vne-macro-market-analyst': {
+    title: 'Macro & Financial Market Analyst Agent',
+    shortDesc: 'Analyzes gold spreads, USD/VND FX, bank deposit/lending rates, and equities using intermarket frameworks.',
+    summary: 'Applies structured intermarket transmission analysis to real-time data inside VNEconomics Market Data Hub.',
+    primaryTag: 'Macroeconomics',
+    tags: ['Gold SJC', 'FX Rates', 'Interest Rates', 'Equities'],
+    formatLabel: 'SKILL.md + Market Context',
+    languageLabel: 'English / Bilingual',
+    adviceStudent: 'Pull live figures from VNEconomics Gold, Forex, and Interest Rate hubs for grounded classroom case studies.',
+    benefitNote: 'Free ($0) — Integrated with Market Hub & AI Lab.',
+    useCases: ['Compare domestic vs global gold spreads and FX pass-through.', 'Analyze how Fed policy rates transmit to domestic liquidity.', 'Draft structured macro briefs for economics coursework.'],
+    pros: ['Clear causal chain: Drivers -> Transmission -> Risk Scenarios.'],
+    limits: ['Strictly educational analysis, never financial investment advice.'],
+    steps: ['Open VNEconomics Market Data Hub.', 'Copy current rates into the agent prompt.', 'Generate 3 macro scenarios (Bull / Base / Cautious).'],
+    samplePrompt: 'Act as a Macro Analyst at VNEconomics. Given current figures [GOLD / FX / INTEREST RATES], analyze monetary transmission across global policy rates, FX liquidity, and digital asset sentiment. Educational use only—no financial advice.',
+  },
+  'excel-financial-modeling-agent': {
+    title: 'Financial Modeling & Data Cleaning Agent',
+    shortDesc: 'Guides agents to clean messy Excel/CSV sheets, model cash flows, compute NPV/IRR/WACC, and chart outputs.',
+    summary: 'Standardizes corporate spreadsheet modeling using Python/Excel dynamic formulas without breaking auditability.',
+    primaryTag: 'Excel & Finance',
+    tags: ['Excel', 'DCF', 'NPV/IRR', 'Pandas'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English / Bilingual',
+    adviceStudent: 'Always instruct agents to use dynamic Excel formulas (=SUM, =NPV, =IRR) rather than hardcoded values.',
+    benefitNote: '100% Free ($0).',
+    useCases: ['Clean raw accounting or survey CSV/XLSX exports.', 'Build 5-year DCF cash-flow sheets with sensitivity tables.'],
+    pros: ['Prevents manual calculation errors and formats clean executive tables.'],
+    limits: ['Review WACC and terminal growth assumptions carefully.'],
+    steps: ['Provide raw .xlsx/.csv structure.', 'Activate Financial Modeling skill.', 'Verify formula audit trail and export.'],
+  },
+  'cardano-web3-research-agent': {
+    title: 'Cardano & Web3 Governance Research Agent',
+    shortDesc: 'Deep-dives eUTxO, Plutus, CIP-30, Voltaire dRep governance, and sustainable Web3 tokenomics.',
+    summary: 'Pairs with VNEconomics 219+ Cardano glossary terms to help students and developers master Cardano & Web3.',
+    primaryTag: 'Cardano & Web3',
+    tags: ['Cardano', 'eUTxO', 'CIP-30', 'dRep'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English & Bilingual',
+    adviceStudent: 'Pair with the Plutus – Cardano Blockchain Academy course before taking the NFT certification quiz.',
+    benefitNote: 'Free ($0) — Synced with Cardano Preprod Hub.',
+    useCases: ['Compare Account-based (EVM) vs eUTxO (Cardano) architecture.', 'Analyze Catalyst proposals and dRep governance.', 'Design real-world supply chain or credential DApps.'],
+    pros: ['Uses accurate Cardano ecosystem terminology throughout.'],
+    limits: ['Always test smart contracts on Preprod/Sepolia Testnets rather than Mainnet.'],
+    steps: ['Open Cardano Hub or AI Lab.', 'Run Web3 research prompts.', 'Practice CIP-30 signing safely on Preprod Testnet.'],
+    samplePrompt: 'Explain [eUTxO / CIP-30 / dRep Governance] on Cardano clearly for Digital Economy students, compare it against Ethereum’s EVM model, and outline 1 practical use case such as verifiable NFT credentials.',
+  },
+  'smart-contract-testnet-auditor': {
+    title: 'Solidity Testnet Security & NFT Metadata Agent',
+    shortDesc: 'Scans ERC-20/ERC-721 Testnet contracts for reentrancy, access control flaws, and nonce replay risks.',
+    summary: 'Helps Web3 learners audit Solidity Testnet contracts and validate ERC-721 JSON metadata schemas.',
+    primaryTag: 'Smart Contract',
+    tags: ['Solidity', 'ERC-721', 'Testnet', 'Security'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English',
+    adviceStudent: 'Always verify signature/nonce checks on minting functions and block Mainnet chain IDs in learning sandboxes.',
+    benefitNote: '100% Free ($0) — Open Source.',
+    useCases: ['Quickly audit Solidity contracts before Sepolia/Amoy deployment.', 'Generate ERC-721 metadata JSON for course certificates.'],
+    pros: ['Flags risky code lines with severity ratings and remediation patches.'],
+    limits: ['Does not replace professional third-party audits for Mainnet production.'],
+    steps: ['Open .sol file in your IDE.', 'Trigger Smart Contract Audit skill.', 'Patch High/Medium findings and re-run unit tests.'],
+    samplePrompt: 'Audit the following Solidity Testnet ERC-721 contract against security checklists (Access Control, Reentrancy, Nonce/Signature Replay, Gas efficiency). Rank findings by severity and provide patched code.',
+  },
+  'seo-geo-aeo-content-architect': {
+    title: 'SEO + GEO + AEO Content Architect',
+    shortDesc: 'Structures articles to rank in Google Search (SEO) and earn citations in AI Search (ChatGPT, Perplexity, AI Overview).',
+    summary: 'Implements the Topic Pillar – TL;DR Answer Box – FAQ JSON-LD Schema framework powering VNEconomics.',
+    primaryTag: 'SEO • GEO • AEO',
+    tags: ['SEO', 'GEO', 'AEO', 'Schema JSON-LD'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English / Bilingual',
+    adviceStudent: 'Place a crisp 40–60 word TL;DR answer block right at the top to maximize AI Search citation pickup.',
+    benefitNote: 'Free ($0).',
+    useCases: ['Design Topical Authority pillar and cluster outlines.', 'Craft concise AEO definition boxes.', 'Generate valid Article + FAQPage JSON-LD markup.'],
+    pros: ['Boosts brand and knowledge visibility across generative answer engines.'],
+    limits: ['Supplement drafts with original empirical data for E-E-A-T trust.'],
+    steps: ['Pick target topic and user intent questions.', 'Run Content Architect skill.', 'Add real statistics and attach JSON-LD schema.'],
+    samplePrompt: 'Create a full SEO + GEO + AEO outline and opening section for “[TOPIC]”: include (1) keyword-aligned H1, (2) a 50-word TL;DR direct answer box, (3) question-based H2/H3 outline, and (4) 3 FAQ items with JSON-LD Schema.',
+  },
+  'digital-marketing-campaign-planner': {
+    title: 'AI Digital Marketing Campaign Planner',
+    shortDesc: 'Builds omnichannel campaign plans across Social, Search, Email, Customer Personas, and funnel KPIs.',
+    summary: 'Companion skill for Digital Marketing courses inside VNEconomics Academy to draft actionable media plans.',
+    primaryTag: 'Marketing Plan',
+    tags: ['Media Plan', 'Persona', 'Funnel', 'KPI'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English / Bilingual',
+    adviceStudent: 'Specify realistic budget constraints and target segments so AI avoids generic channel lists.',
+    benefitNote: 'Free ($0).',
+    useCases: ['Map customer pain points and conversion triggers.', 'Allocate content and budgets across Awareness – Consideration – Conversion.'],
+    pros: ['Ready-to-present tabular campaign structure for student capstones.'],
+    limits: ['Calibrate CPC/CPM benchmarks against live ad manager estimates.'],
+    steps: ['Enter product, target audience, and budget.', 'Run Campaign Planner skill.', 'Refine content calendar and tracking KPIs.'],
+    samplePrompt: 'Build a 4-week omnichannel Digital Marketing plan for [PRODUCT], budget [$X], audience [SEGMENT]. Output a table: Funnel Stage | Core Channels | Messaging | Content Format | KPIs.',
+  },
+  'vibecode-frontend-taste': {
+    title: 'Vibe Coding Anti-Slop UI/UX Frontend Skill',
+    shortDesc: 'Design engineering rules for crisp React + Tailwind CSS interfaces free of generic AI template patterns.',
+    summary: 'Enforces strong typographic hierarchy, intentional color tokens, accessibility, and zero horizontal overflow.',
+    primaryTag: 'Vibe Coding UI',
+    tags: ['React', 'Tailwind', 'UI/UX', 'Frontend'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English',
+    adviceStudent: 'Pair with VNEconomics AI Vibe-Coded Websites ecosystem projects to practice shipping real apps.',
+    benefitNote: '100% Free ($0) — Open Source.',
+    useCases: ['Design SaaS dashboards, marketplaces, and editorial portals.', 'Optimize responsive grids, contrast, and dark mode tokens.'],
+    pros: ['Eliminates bloated wrapper cards and inconsistent spacing.'],
+    limits: ['Always inspect rendered breakpoints directly in a live browser.'],
+    steps: ['Save design rules to SKILL.md.', 'Describe product goals and visual direction.', 'Verify rendered UI across desktop and mobile viewports.'],
+  },
+  'create-word-academic-doc': {
+    title: 'Academic Microsoft Word (.docx) Generator',
+    shortDesc: 'Formats structured .docx files with academic cover pages, APA borderless tables, callouts, and hanging indents.',
+    summary: 'Converts research drafts and Markdown reports into submission-ready Microsoft Word documents.',
+    primaryTag: 'Word (.docx)',
+    tags: ['DOCX', 'APA Table', 'Report'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English / Bilingual',
+    adviceStudent: 'Saves hours of manual Word formatting for APA tables and hanging-indent reference sections.',
+    benefitNote: 'Free ($0).',
+    useCases: ['Export dissertation proposals into clean .docx files.', 'Format executive briefs with structured typography.'],
+    pros: ['Enforces clean serif/sans print fonts and proper page breaks.'],
+    limits: ['Requires an agent runtime capable of running Python (`python-docx`) or Node scripts.'],
+    steps: ['Prepare Markdown or text draft.', 'Invoke the Word formatting skill.', 'Inspect generated .docx before submission.'],
+    samplePrompt: 'Convert the following report into a submission-ready Microsoft Word (.docx) document with an academic cover page, clean heading hierarchy, APA horizontal-only data tables, and hanging-indent references.',
+  },
+  'mcp-server-builder-agent': {
+    title: 'MCP Server Builder (Agent Tool Integration)',
+    shortDesc: 'Guides agents to implement Model Context Protocol (MCP) servers in TypeScript SDK or Python FastMCP.',
+    summary: 'Standardizes connecting AI agents to external APIs, internal databases, and financial datasets cleanly.',
+    primaryTag: 'MCP Server',
+    tags: ['MCP', 'FastMCP', 'TypeScript', 'Agent Tools'],
+    formatLabel: 'SKILL.md',
+    languageLabel: 'English',
+    adviceStudent: 'Great for developers wiring custom financial APIs directly into desktop/IDE agents.',
+    benefitNote: '100% Free ($0) — Open Source.',
+    useCases: ['Expose live equity/crypto data tools to AI assistants.', 'Package reusable toolkits cleanly with schema validation.'],
+    pros: ['Follows current MCP specification cleanly across IDEs.'],
+    limits: ['Never hardcode secrets; always pass API keys via environment variables.'],
+    steps: ['Define target API endpoints or data schema.', 'Generate MCP server via TypeScript or FastMCP.', 'Register server in agent config and test tool calls.'],
+  },
+};
+
+export function getLocalizedSkillCategories(lang: 'vi' | 'en') {
+  if (lang === 'en') {
+    return SKILL_CATEGORIES.map((c) => ({
+      slug: c.slug,
+      label: SKILL_CATEGORIES_EN[c.slug],
+    }));
+  }
+  return SKILL_CATEGORIES;
+}
+
+export function getLocalizedSkills(lang: 'vi' | 'en'): AISkillItem[] {
+  if (lang === 'vi') return AI_SKILLS_CATALOG;
+  return AI_SKILLS_CATALOG.map((item) => ({
+    ...item,
+    categoryName: SKILL_CATEGORIES_EN[item.categorySlug],
+    ...(AI_SKILLS_EN_MAP[item.slug] || {}),
+  }));
+}

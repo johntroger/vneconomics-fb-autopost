@@ -1,5 +1,14 @@
 api/config.php
 uploads/
+wp-content/
+exports/
+api/cache/
+node_modules/
+dist/
+.env
+.env.local
+.gemini/
+*.zip
 *.log
 .DS_Store
 Thumbs.db
