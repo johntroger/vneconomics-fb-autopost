@@ -177,6 +177,47 @@ function fetchWpPostsPage(string $wpApiUrl, int $page, int $perPage): array {
 }
 
 /**
+ * Đồng bộ bài viết trực tiếp từ VNEconomics v2 REST API (/api/posts.php?with_content=1)
+ */
+function fetchVneApiArticles(string $baseUrl, int $perPage = 30): array {
+    $baseUrl = rtrim($baseUrl, '/');
+    $url = "{$baseUrl}/api/posts.php?limit=" . max(1, min(50, $perPage)) . "&with_content=1";
+    $res = httpGetRaw($url, 20);
+    if (!$res['ok']) {
+        return ['ok' => false, 'error' => $res['error'], 'articles' => []];
+    }
+    $decoded = json_decode($res['body'], true);
+    if (!is_array($decoded) || empty($decoded['ok']) || !is_array($decoded['data'] ?? null)) {
+        return ['ok' => false, 'error' => 'Invalid VNE API JSON', 'articles' => []];
+    }
+
+    $articles = [];
+    foreach ($decoded['data'] as $row) {
+        $slug = trim((string)($row['slug'] ?? ''));
+        $title = trim((string)($row['title'] ?? ''));
+        if ($slug === '' || $title === '') continue;
+        $img = trim((string)($row['featured_image'] ?? ''));
+        if ($img !== '' && str_starts_with($img, '/')) {
+            $img = $baseUrl . $img;
+        }
+        $articles[] = [
+            'wp_id'          => (int)($row['wp_id'] ?? $row['id'] ?? crc32($slug)),
+            'category_slug'  => trim((string)($row['pillar_slug'] ?? 'kinh-te-so')),
+            'category_label' => trim((string)($row['pillar_name'] ?? $row['pillar_label'] ?? 'Kinh Tế Số')),
+            'slug'           => $slug,
+            'title'          => $title,
+            'link'           => "{$baseUrl}/{$slug}/",
+            'image_url'      => $img,
+            'excerpt_html'   => (string)($row['tldr_summary'] ?? $row['excerpt'] ?? ''),
+            'content_html'   => (string)($row['content_html'] ?? $row['tldr_summary'] ?? ''),
+            'published_at'   => !empty($row['published_at']) ? date('Y-m-d H:i:s', strtotime((string)$row['published_at'])) : date('Y-m-d H:i:s'),
+        ];
+    }
+
+    return ['ok' => !empty($articles), 'error' => empty($articles) ? 'No posts returned' : '', 'articles' => $articles];
+}
+
+/**
  * Đồng bộ tất cả site trong cấu hình vào MySQL `social_post_queue`
  */
 function syncWordPressSites(?PDO $pdo, array $config, bool $quickSyncOnly = false): array {
@@ -221,13 +262,16 @@ function syncWordPressSites(?PDO $pdo, array $config, bool $quickSyncOnly = fals
         for ($page = 1; $page <= $maxPages; $page++) {
             $res = fetchWpPostsPage($wpApiUrl, $page, $perPage);
             if (!$res['ok']) {
-                // Nếu WP REST API trả HTML/lỗi ở trang 1, tự động fallback sang Vite Bundle (cho site React/Vite)
+                // Nếu WP REST API trả HTML/lỗi ở trang 1, ưu tiên đọc từ VNEconomics v2 API (/api/posts.php), rồi mới fallback sang Vite Bundle
                 if ($page === 1) {
                     $baseUrl = trim($siteConf['base_url'] ?? '');
                     if (!empty($baseUrl)) {
-                        $viteRes = extractViteBundleArticles($baseUrl);
-                        if ($viteRes['ok']) {
-                            $items = $quickSyncOnly ? array_slice($viteRes['articles'], 0, 20) : $viteRes['articles'];
+                        $vneRes = fetchVneApiArticles($baseUrl, $perPage);
+                        if (!$vneRes['ok']) {
+                            $vneRes = extractViteBundleArticles($baseUrl);
+                        }
+                        if ($vneRes['ok']) {
+                            $items = $quickSyncOnly ? array_slice($vneRes['articles'], 0, 20) : $vneRes['articles'];
                             foreach ($items as $art) {
                                 $upsertStmt->execute([
                                     ':site'      => $siteKey,
@@ -246,7 +290,7 @@ function syncWordPressSites(?PDO $pdo, array $config, bool $quickSyncOnly = fals
                             }
                             break;
                         } else {
-                            $errors[] = "WP API ({$res['error']}) & Vite Bundle ({$viteRes['error']})";
+                            $errors[] = "WP API ({$res['error']}) & VNE v2/Vite ({$vneRes['error']})";
                             break;
                         }
                     }

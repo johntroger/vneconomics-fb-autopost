@@ -35,7 +35,9 @@ function stripDuplicateLeadingCover(html: string, featuredImage?: string | null)
 export const PostDetailPage: React.FC = () => {
   const { slug = '' } = useParams<{ slug: string }>();
   const { lang, isEn, setLanguage } = useTranslation();
-  const post = getPostBySlug(slug, lang);
+  const catalogPost = getPostBySlug(slug, lang);
+  const [serverPost, setServerPost] = useState<typeof catalogPost>(undefined);
+  const post = catalogPost || serverPost;
   const rawPillar = resolvePillarBySlug(post?.pillar_slug);
   const pillar = rawPillar ? getLocalizedPillar(rawPillar, lang) : undefined;
 
@@ -122,6 +124,24 @@ export const PostDetailPage: React.FC = () => {
           }
           if (json?.ok && json?.data?.content_html) {
             fetchedHtml = json.data.content_html;
+            if (!cancelled && !catalogPost && json.data.title) {
+              setServerPost({
+                wp_id: Number(json.data.wp_id || json.data.id || 0),
+                post_type: 'post',
+                slug: String(json.data.slug || slug),
+                title: String(json.data.title),
+                tldr_summary: String(json.data.tldr_summary || ''),
+                excerpt: String(json.data.excerpt || json.data.tldr_summary || ''),
+                pillar_slug: (json.data.pillar_slug || 'kinh-te-so') as NonNullable<typeof catalogPost>['pillar_slug'],
+                pillar_id: 1,
+                author_name: String(json.data.author_name || 'Ban Biên Tập VNEconomics'),
+                featured_image: json.data.featured_image || null,
+                seo_title: String(json.data.seo_title || json.data.title),
+                seo_desc: String(json.data.seo_desc || json.data.tldr_summary || ''),
+                reading_minutes: Number(json.data.reading_minutes || 4),
+                published_at: String(json.data.published_at || new Date().toISOString()),
+              });
+            }
           }
         }
       } catch {

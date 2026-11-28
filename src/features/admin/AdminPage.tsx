@@ -8,15 +8,19 @@ import {
   FileCheck2,
   Loader2,
   Lock,
+  PlusCircle,
+  Send,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
   Unlock,
   XCircle,
 } from 'lucide-react';
+import { TOPIC_PILLARS } from '../../core/config/pillars.ts';
 import { getCatalogStats, getPosts } from '../../core/data/catalogService.ts';
 import { useTranslation } from '../../core/i18n/index.ts';
 import { useSEO } from '../../core/seo/useSEO.ts';
+import type { PillarSlug } from '../../core/types/index.ts';
 import { AiPredictionReviewCard } from '../predictions/AiPredictionReviewCard.tsx';
 import {
   approvePendingMarket,
@@ -65,6 +69,108 @@ export const AdminPage: React.FC = () => {
   const [extraEvidenceByMarket, setExtraEvidenceByMarket] = useState<Record<string, string>>({});
   const [selectedWinOutcomeByMarket, setSelectedWinOutcomeByMarket] = useState<Record<string, string>>({});
   const [adminNotice, setAdminNotice] = useState<string | null>(null);
+
+  // VNEconomics v2 Direct Article Publishing -> Autopost FB/Telegram
+  const [pubTitle, setPubTitle] = useState('');
+  const [pubSlug, setPubSlug] = useState('');
+  const [pubSlugTouched, setPubSlugTouched] = useState(false);
+  const [pubPillar, setPubPillar] = useState<PillarSlug>('kinh-te-so');
+  const [pubFeaturedImage, setPubFeaturedImage] = useState('');
+  const [pubReadingMinutes, setPubReadingMinutes] = useState(6);
+  const [pubTldr, setPubTldr] = useState('');
+  const [pubContent, setPubContent] = useState('');
+  const [pubSubmitting, setPubSubmitting] = useState(false);
+  const [pubError, setPubError] = useState<string | null>(null);
+  const [pubResult, setPubResult] = useState<{ slug: string; url: string } | null>(null);
+
+  const toSlug = (raw: string) =>
+    raw
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 120);
+
+  const handlePublishTitleChange = (val: string) => {
+    setPubTitle(val);
+    if (!pubSlugTouched) {
+      setPubSlug(toSlug(val));
+    }
+  };
+
+  const handlePublishArticle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPubError(null);
+    setPubResult(null);
+
+    const title = pubTitle.trim();
+    const slug = (pubSlug.trim() || toSlug(title)).replace(/^\/+|\/+$/g, '');
+    const rawContent = pubContent.trim();
+
+    if (!title || !slug || !rawContent) {
+      setPubError(
+        isEn
+          ? 'Please enter article title, slug, and content.'
+          : 'Vui lòng nhập đầy đủ tiêu đề, slug và nội dung bài viết.',
+      );
+      return;
+    }
+
+    const contentHtml = /<(p|h[1-6]|ul|ol|div|blockquote)\b/i.test(rawContent)
+      ? rawContent
+      : rawContent
+          .split(/\n{2,}/)
+          .map((block) => `<p>${block.trim().replace(/\n/g, '<br />')}</p>`)
+          .join('\n');
+
+    setPubSubmitting(true);
+    try {
+      const res = await fetch('/api/posts.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Token': adminToken.trim(),
+        },
+        body: JSON.stringify({
+          title,
+          slug,
+          pillar_slug: pubPillar,
+          featured_image: pubFeaturedImage.trim(),
+          reading_minutes: Math.max(1, Number(pubReadingMinutes) || 6),
+          tldr_summary: pubTldr.trim(),
+          excerpt: pubTldr.trim(),
+          content_html: contentHtml,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || `HTTP ${res.status}`);
+      }
+      setPubResult({
+        slug: json.data?.slug || slug,
+        url: json.data?.url || `https://vneconomics.com/${slug}/`,
+      });
+      setPubTitle('');
+      setPubSlug('');
+      setPubSlugTouched(false);
+      setPubFeaturedImage('');
+      setPubTldr('');
+      setPubContent('');
+    } catch (err) {
+      setPubError(
+        err instanceof Error
+          ? err.message
+          : isEn
+            ? 'Failed to publish article.'
+            : 'Không thể xuất bản bài viết.',
+      );
+    } finally {
+      setPubSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const sync = () => setMarkets(getPredictionMarkets({ includePending: true }));
@@ -506,6 +612,197 @@ export const AdminPage: React.FC = () => {
               </div>
             )}
           </div>
+        )}
+      </section>
+
+      {/* VNEconomics v2 Direct Article Publishing -> Autopost FB/Telegram */}
+      <section className="p-6 rounded-2xl border border-paper-300 dark:border-ink-800 bg-paper-50 dark:bg-ink-900 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-serif text-lg font-bold flex items-center gap-2">
+              <PlusCircle className="w-5 h-5 text-editorial-teal" />
+              {isEn
+                ? 'Publish New Article (VNEconomics v2 → Autopost)'
+                : 'Đăng bài viết mới (VNEconomics v2 → Autopost FB/Telegram)'}
+            </h2>
+            <p className="text-xs text-ink-600 dark:text-ink-400 mt-1">
+              {isEn
+                ? 'Publishes directly to vneconomics.com MySQL & renders immediately at /<slug>/. automation.vneconomics.com scans /api/posts.php automatically for Facebook & Telegram.'
+                : 'Lưu trực tiếp vào MySQL trên vneconomics.com và hiển thị ngay tại /<slug>/. Hệ thống automation.vneconomics.com sẽ tự quét /api/posts.php để đăng Facebook & Telegram.'}
+            </p>
+          </div>
+        </div>
+
+        {!isUnlocked ? (
+          <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 text-xs text-amber-700 dark:text-amber-300">
+            {isEn
+              ? 'Please enter your Admin Token at the top of the page to unlock direct article publishing.'
+              : 'Vui lòng nhập Admin Token ở đầu trang để mở khóa tính năng đăng bài viết mới.'}
+          </div>
+        ) : (
+          <form onSubmit={handlePublishArticle} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-ink-700 dark:text-ink-300 mb-1">
+                  {isEn ? 'Article Title *' : 'Tiêu đề bài viết *'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={pubTitle}
+                  onChange={(e) => handlePublishTitleChange(e.target.value)}
+                  placeholder={
+                    isEn
+                      ? 'e.g. How AI Agents Reshaped Vietnam Digital Payments in 2026'
+                      : 'VD: AI Agent đang thay đổi thanh toán số tại Việt Nam năm 2026 ra sao?'
+                  }
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-paper-300 dark:border-ink-700 bg-paper-50 dark:bg-ink-950"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-ink-700 dark:text-ink-300 mb-1">
+                  {isEn ? 'URL Slug *' : 'Đường dẫn (Slug) *'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={pubSlug}
+                  onChange={(e) => {
+                    setPubSlugTouched(true);
+                    setPubSlug(e.target.value);
+                  }}
+                  placeholder="ai-agent-thanh-toan-so-viet-nam-2026"
+                  className="w-full px-3 py-2 text-sm font-mono rounded-lg border border-paper-300 dark:border-ink-700 bg-paper-50 dark:bg-ink-950"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-ink-700 dark:text-ink-300 mb-1">
+                  {isEn ? 'Topic Pillar' : 'Chuyên mục'}
+                </label>
+                <select
+                  value={pubPillar}
+                  onChange={(e) => setPubPillar(e.target.value as PillarSlug)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-paper-300 dark:border-ink-700 bg-paper-50 dark:bg-ink-950"
+                >
+                  {TOPIC_PILLARS.map((p) => (
+                    <option key={p.slug} value={p.slug}>
+                      {isEn ? p.nameEn : p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-ink-700 dark:text-ink-300 mb-1">
+                  {isEn ? 'Featured Image URL (optional)' : 'URL Ảnh đại diện (tùy chọn)'}
+                </label>
+                <input
+                  type="url"
+                  value={pubFeaturedImage}
+                  onChange={(e) => setPubFeaturedImage(e.target.value)}
+                  placeholder="https://vneconomics.com/wp-content/uploads/..."
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-paper-300 dark:border-ink-700 bg-paper-50 dark:bg-ink-950"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-ink-700 dark:text-ink-300 mb-1">
+                  {isEn ? 'Reading Minutes' : 'Thời gian đọc (phút)'}
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={pubReadingMinutes}
+                  onChange={(e) => setPubReadingMinutes(Number(e.target.value) || 6)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-paper-300 dark:border-ink-700 bg-paper-50 dark:bg-ink-950"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-ink-700 dark:text-ink-300 mb-1">
+                {isEn ? 'TL;DR Summary / Excerpt' : 'Tóm tắt TL;DR / Sapo'}
+              </label>
+              <textarea
+                rows={2}
+                value={pubTldr}
+                onChange={(e) => setPubTldr(e.target.value)}
+                placeholder={
+                  isEn
+                    ? 'Concise 1-2 sentence takeaway used for GEO/AEO and Autopost captions.'
+                    : 'Tóm tắt ngắn 1–2 câu dùng cho GEO/AEO và nội dung tóm tắt khi Autopost.'
+                }
+                className="w-full px-3 py-2 text-sm rounded-lg border border-paper-300 dark:border-ink-700 bg-paper-50 dark:bg-ink-950"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-ink-700 dark:text-ink-300 mb-1">
+                {isEn ? 'Article Content (HTML or plain paragraphs) *' : 'Nội dung bài viết (HTML hoặc văn bản thường) *'}
+              </label>
+              <textarea
+                required
+                rows={8}
+                value={pubContent}
+                onChange={(e) => setPubContent(e.target.value)}
+                placeholder={
+                  isEn
+                    ? '<p>Write or paste HTML / plain paragraphs here...</p>'
+                    : 'Dán nội dung HTML hoặc các đoạn văn bản thường (tự động bọc thẻ <p>)...'
+                }
+                className="w-full px-3 py-2 text-sm font-mono rounded-lg border border-paper-300 dark:border-ink-700 bg-paper-50 dark:bg-ink-950"
+              />
+            </div>
+
+            {pubError && (
+              <div className="p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-xs text-rose-700 dark:text-rose-300 flex items-center gap-2">
+                <XCircle className="w-4 h-4 shrink-0" />
+                <span>{pubError}</span>
+              </div>
+            )}
+
+            {pubResult && (
+              <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-800 dark:text-emerald-200 flex flex-wrap items-center justify-between gap-2">
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  {isEn
+                    ? 'Article published! Autopost will pick it up on the next sync.'
+                    : 'Đã xuất bản bài viết! Autopost sẽ tự động quét trong chu kỳ tiếp theo.'}
+                </span>
+                <a
+                  href={`/${pubResult.slug}/`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 font-semibold underline"
+                >
+                  {pubResult.url}
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            )}
+
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={pubSubmitting}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-editorial-teal hover:bg-editorial-teal/90 text-white text-sm font-semibold disabled:opacity-60 cursor-pointer"
+              >
+                {pubSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {pubSubmitting
+                  ? isEn
+                    ? 'Publishing...'
+                    : 'Đang xuất bản...'
+                  : isEn
+                    ? 'Publish Article'
+                    : 'Xuất bản bài viết'}
+              </button>
+            </div>
+          </form>
         )}
       </section>
 
