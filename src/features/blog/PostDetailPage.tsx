@@ -19,6 +19,19 @@ import {
 const VN_CHAR_RE =
   /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/;
 
+function stripDuplicateLeadingCover(html: string, featuredImage?: string | null): string {
+  const trimmed = html.trimStart();
+  if (!trimmed || !featuredImage) return html;
+  const baseName = featuredImage.split('/').pop()?.split('?')[0]?.toLowerCase() || '';
+  const leadMatch = trimmed.match(/^(?:<figure\b[^>]*>[\s\S]*?<\/figure>|<p\b[^>]*>\s*<img\b[^>]*>\s*<\/p>)/i);
+  if (!leadMatch) return html;
+  const blockLower = leadMatch[0].toLowerCase();
+  if ((baseName && blockLower.includes(baseName)) || blockLower.includes('-cover-')) {
+    return trimmed.slice(leadMatch[0].length).trimStart();
+  }
+  return html;
+}
+
 export const PostDetailPage: React.FC = () => {
   const { slug = '' } = useParams<{ slug: string }>();
   const { lang, isEn, setLanguage } = useTranslation();
@@ -145,7 +158,9 @@ export const PostDetailPage: React.FC = () => {
           }
         } else {
           setBodyHtml(
-            fetchedHtml ? sanitizeHtmlContent(fetchedHtml) : `<p>${post?.tldr_summary || post?.excerpt || ''}</p>`,
+            fetchedHtml
+              ? stripDuplicateLeadingCover(sanitizeHtmlContent(fetchedHtml), post?.featured_image)
+              : `<p>${post?.tldr_summary || post?.excerpt || ''}</p>`,
           );
         }
       }
