@@ -32,6 +32,7 @@ interface Cip30Api {
 interface CardanoWalletProvider {
   name?: string;
   icon?: string;
+  isEnabled?: () => Promise<boolean>;
   enable: () => Promise<Cip30Api>;
 }
 
@@ -86,6 +87,11 @@ export async function connectEvmTestnetWallet(): Promise<EvmWalletState> {
   const address = accounts?.[0];
   if (!address) throw new Error(en ? 'Could not retrieve EVM wallet address.' : 'Không lấy được địa chỉ ví EVM.');
 
+  return describeEvmWallet(eth, address);
+}
+
+async function describeEvmWallet(eth: Eip1193Provider, address: string): Promise<EvmWalletState> {
+  const en = isEnLang();
   const chainId = String(await eth.request({ method: 'eth_chainId' })).toLowerCase();
   const isMainnetDanger = KNOWN_MAINNET_CHAIN_IDS.includes(chainId);
   const isTestnet = SUPPORTED_TESTNET_CHAIN_IDS.includes(chainId);
@@ -110,6 +116,47 @@ export async function connectEvmTestnetWallet(): Promise<EvmWalletState> {
     walletName,
     isTestnet,
     isMainnetDanger,
+  };
+}
+
+/** Khôi phục ví EVM đã cấp quyền trước đó mà không bật popup (eth_accounts). */
+export async function restoreEvmWallet(): Promise<EvmWalletState | null> {
+  const eth = window.ethereum;
+  if (!eth) return null;
+  try {
+    const accounts = (await eth.request({ method: 'eth_accounts' })) as string[];
+    if (!accounts?.[0]) return null;
+    return await describeEvmWallet(eth, accounts[0]);
+  } catch {
+    return null;
+  }
+}
+
+/** Khôi phục ví Cardano CIP-30 đã được cấp quyền (isEnabled) mà không bật popup. */
+export async function restoreCardanoWallet(walletId: string): Promise<CardanoWalletState | null> {
+  const provider = window.cardano?.[walletId];
+  if (!provider) return null;
+  try {
+    if (typeof provider.isEnabled === 'function' && !(await provider.isEnabled())) return null;
+    return await connectCardanoWallet(walletId);
+  } catch {
+    return null;
+  }
+}
+
+export function subscribeEvmWalletEvents(onChange: () => void): () => void {
+  const eth = window.ethereum as
+    | (Eip1193Provider & {
+        on?: (event: string, cb: () => void) => void;
+        removeListener?: (event: string, cb: () => void) => void;
+      })
+    | undefined;
+  if (!eth?.on) return () => {};
+  eth.on('accountsChanged', onChange);
+  eth.on('chainChanged', onChange);
+  return () => {
+    eth.removeListener?.('accountsChanged', onChange);
+    eth.removeListener?.('chainChanged', onChange);
   };
 }
 

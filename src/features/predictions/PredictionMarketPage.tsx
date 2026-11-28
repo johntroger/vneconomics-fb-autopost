@@ -24,9 +24,8 @@ import {
   connectEvmTestnetWallet,
   detectCardanoWallets,
   switchToBaseSepolia,
-  type CardanoWalletState,
-  type EvmWalletState,
 } from '../web3/multiChainWalletService.ts';
+import { useWalletSession } from '../web3/useWalletSession.ts';
 import {
   buildOutcomeOrderBook,
   claimResolvedPredictionPosition,
@@ -241,8 +240,7 @@ export const PredictionMarketPage: React.FC = () => {
   const [sortMode, setSortMode] = useState<SortMode>('volume');
 
   // Testnet Wallets
-  const [evm, setEvm] = useState<EvmWalletState | null>(null);
-  const [cardano, setCardano] = useState<CardanoWalletState | null>(null);
+  const { evm, cardano, setEvm, setCardano } = useWalletSession();
   const [cardanoWallets] = useState<string[]>(() => detectCardanoWallets());
   const [walletBusy, setWalletBusy] = useState(false);
 

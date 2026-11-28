@@ -8,9 +8,8 @@ import {
   getMintedNfts,
   mintTestnetNft,
   switchToBaseSepolia,
-  type CardanoWalletState,
-  type EvmWalletState,
 } from './multiChainWalletService.ts';
+import { useWalletSession } from './useWalletSession.ts';
 import { getPointsState } from '../game/vneGameService.ts';
 import { useTranslation } from '../../core/i18n/index.ts';
 import { useSEO } from '../../core/seo/useSEO.ts';
@@ -28,8 +27,7 @@ export const CardanoHubPage: React.FC = () => {
     canonicalPath: '/cardano-hub/',
   });
 
-  const [evm, setEvm] = useState<EvmWalletState | null>(null);
-  const [cardano, setCardano] = useState<CardanoWalletState | null>(null);
+  const { evm, cardano, setEvm, setCardano } = useWalletSession();
   const [cardanoWallets] = useState<string[]>(() => detectCardanoWallets());
   const [nfts, setNfts] = useState(() => getMintedNfts());
 
