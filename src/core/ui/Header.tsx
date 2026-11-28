@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Wallet, Sun, Moon, Sparkles, Coins, Search, User, ChevronDown } from 'lucide-react';
+import { Wallet, Sun, Moon, Sparkles, Coins, Search, User, ChevronDown, Menu } from 'lucide-react';
+import { MobileMenuDrawer } from './MobileMenuDrawer.tsx';
 import { useTheme } from '../context/ThemeContext.tsx';
 import { useTranslation } from '../i18n/index.ts';
 import { getLocalizedPillar, TOPIC_PILLARS } from '../config/pillars.ts';
@@ -72,6 +73,7 @@ export const Header: React.FC = () => {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [academyOpen, setAcademyOpen] = useState(false);
   const [simOpen, setSimOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profile, setProfile] = useState<UserAccountProfile | null>(() => getSavedProfile());
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -180,7 +182,7 @@ export const Header: React.FC = () => {
       <div className="w-full bg-[#146EBE] text-white relative z-50">
         <div className="w-full px-3 sm:px-6 lg:px-8 py-2 grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3">
           {/* Social Icons */}
-          <div className="flex items-center justify-center lg:justify-start gap-1.5 shrink-0">
+          <div className="hidden lg:flex items-center justify-start gap-1.5 shrink-0">
             {SOCIAL_LINKS.map((soc) => (
               <a
                 key={soc.name}
@@ -295,7 +297,16 @@ export const Header: React.FC = () => {
       {/* Main Sticky Navigation */}
       <header className="sticky top-0 z-40 border-b border-paper-300/90 dark:border-ink-800 bg-paper-50/95 dark:bg-ink-950/95 backdrop-blur">
         <div className="w-full px-2 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-1.5 sm:gap-4">
-          <Link to="/" className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 min-w-0">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label={isEn ? 'Open menu' : 'Mở menu'}
+            aria-expanded={mobileMenuOpen}
+            className="lg:hidden p-2 rounded-lg border border-paper-300 dark:border-ink-700 text-ink-800 dark:text-paper-200 shrink-0"
+          >
+            <Menu className="w-4 h-4" />
+          </button>
+          <Link to="/" className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 min-w-0 mr-auto lg:mr-0">
             <img
               src="/logo-vneconomics.png"
               alt="Logo VNEconomics"
@@ -574,7 +585,7 @@ export const Header: React.FC = () => {
             <Link
               to="/ai-lab/"
               title={isEn ? 'Connect your free personal AI Assistant (Gemini / OpenAI)' : 'Kết nối Trợ lý AI cá nhân miễn phí (Gemini / OpenAI)'}
-              className="inline-flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg border border-paper-300 dark:border-ink-700 bg-paper-100 dark:bg-ink-900 text-xs font-medium text-ink-800 dark:text-paper-200 hover:border-editorial-teal transition-colors"
+              className="hidden sm:inline-flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg border border-paper-300 dark:border-ink-700 bg-paper-100 dark:bg-ink-900 text-xs font-medium text-ink-800 dark:text-paper-200 hover:border-editorial-teal transition-colors"
             >
               <Sparkles className="w-3.5 h-3.5 text-editorial-teal dark:text-emerald-400" />
               <span className="hidden xl:inline">{t('nav.aiKey')}</span>
@@ -587,7 +598,7 @@ export const Header: React.FC = () => {
             <Link
               to="/cardano-hub/"
               title={isEn ? 'Connect 0-Cost Testnet Wallet (EVM & Cardano)' : 'Kết nối Ví Blockchain Testnet 0đ (EVM & Cardano)'}
-              className="inline-flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg border border-paper-300 dark:border-ink-700 bg-paper-100 dark:bg-ink-900 text-xs font-medium text-ink-800 dark:text-paper-200 hover:border-editorial-navy transition-colors"
+              className="hidden sm:inline-flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg border border-paper-300 dark:border-ink-700 bg-paper-100 dark:bg-ink-900 text-xs font-medium text-ink-800 dark:text-paper-200 hover:border-editorial-navy transition-colors"
             >
               <Wallet className="w-3.5 h-3.5 text-editorial-navy dark:text-sky-400" />
               <span className="hidden xl:inline">{t('nav.testnetWallet')}</span>
@@ -625,47 +636,14 @@ export const Header: React.FC = () => {
           </div>
         </div>
 
-        <div className="lg:hidden border-t border-paper-200 dark:border-ink-800/80 px-4 py-1.5 flex items-center gap-3 overflow-x-auto no-scrollbar text-xs text-ink-700 dark:text-ink-400">
-          {TOPIC_PILLARS.map((p) => {
-            const loc = getLocalizedPillar(p, lang);
-            return (
-              <Link key={p.slug} to={`/${p.slug}/`} className="whitespace-nowrap hover:text-editorial-teal">
-                {loc.shortLabel}
-              </Link>
-            );
-          })}
-          <Link to="/thi-truong/" className="whitespace-nowrap hover:text-[#146EBE] font-semibold">
-            {t('nav.market')}
-          </Link>
-          <Link to="/du-bao/" className="whitespace-nowrap hover:text-[#146EBE] font-bold text-[#146EBE] dark:text-sky-400">
-            {t('nav.predictions')}
-          </Link>
-          <Link to="/gia-crypto/" className="whitespace-nowrap hover:text-[#146EBE]">
-            {isEn ? 'Crypto' : 'Giá Crypto'}
-          </Link>
-          <Link to="/gia-vang/" className="whitespace-nowrap hover:text-[#146EBE]">
-            {isEn ? 'Gold' : 'Giá Vàng'}
-          </Link>
-          <Link to="/ai-skills/" className="whitespace-nowrap inline-flex items-center gap-1 text-[#146EBE] dark:text-sky-400 font-semibold">
-            <Sparkles className="w-3 h-3" /> {t('nav.aiSkills')}
-          </Link>
-          <Link to="/luyen-tap/" className="whitespace-nowrap inline-flex items-center gap-1 text-[#146EBE] dark:text-sky-400 font-semibold">
-            <Sparkles className="w-3 h-3" /> {t('nav.practice')}
-          </Link>
-          <Link to="/learn-and-earn/" className="whitespace-nowrap inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
-            <Coins className="w-3 h-3" /> {t('nav.simNft')}
-          </Link>
-          <Link to="/mo-phong/testnet-swap/" className="whitespace-nowrap hover:text-[#146EBE] font-semibold">
-            {isEn ? 'Testnet Swap' : 'Đổi Testnet'}
-          </Link>
-          <Link to="/tu-dien/" className="whitespace-nowrap inline-flex items-center gap-1 text-editorial-teal font-medium">
-            <Sparkles className="w-3 h-3" /> {t('nav.glossary')}
-          </Link>
-          <Link to="/tin-quoc-te/" className="whitespace-nowrap hover:text-[#146EBE]">
-            {isEn ? 'International' : 'Tin Quốc tế'}
-          </Link>
-        </div>
       </header>
+
+      <MobileMenuDrawer
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        socialLinks={SOCIAL_LINKS}
+        points={points}
+      />
 
       <AuthModal
         isOpen={authModalOpen}
