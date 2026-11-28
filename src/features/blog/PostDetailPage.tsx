@@ -115,16 +115,14 @@ export const PostDetailPage: React.FC = () => {
         // Fallback below for local static Vite dev
       }
 
-      // 3. Fallback WP REST API (to get source HTML for VI view or on-demand BYOK EN translation)
+      // 3. Fallback static pre-extracted full article JSON (/posts-content/<slug>.json)
       if (!fetchedHtml) {
         try {
-          const wpRes = await fetch(
-            `https://vneconomics.com/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}&_fields=content`,
-          );
-          if (wpRes.ok) {
-            const arr = await wpRes.json();
-            if (Array.isArray(arr) && arr[0]?.content?.rendered) {
-              fetchedHtml = arr[0].content.rendered;
+          const staticRes = await fetch(`/posts-content/${encodeURIComponent(slug)}.json`);
+          if (staticRes.ok) {
+            const staticJson = await staticRes.json();
+            if (staticJson?.content_html) {
+              fetchedHtml = staticJson.content_html;
             }
           }
         } catch {
