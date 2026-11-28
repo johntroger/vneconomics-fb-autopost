@@ -21,6 +21,12 @@ import { getCatalogStats, getPosts } from '../../core/data/catalogService.ts';
 import { useTranslation } from '../../core/i18n/index.ts';
 import { useSEO } from '../../core/seo/useSEO.ts';
 import type { PillarSlug } from '../../core/types/index.ts';
+import {
+  getFirebaseIdToken,
+  isFirebaseConfigured,
+  loginWithGoogleAccount,
+  signOutAccount,
+} from '../account/accountService.ts';
 import { AiPredictionReviewCard } from '../predictions/AiPredictionReviewCard.tsx';
 import {
   approvePendingMarket,
@@ -58,6 +64,96 @@ export const AdminPage: React.FC = () => {
 
   const [adminToken, setAdminToken] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(() => isLocalhost);
+  const [authMethod, setAuthMethod] = useState<'localhost' | 'token' | 'firebase' | null>(() =>
+    isLocalhost ? 'localhost' : null,
+  );
+  const [adminAuthBusy, setAdminAuthBusy] = useState(false);
+  const [adminAuthError, setAdminAuthError] = useState<string | null>(null);
+  const [adminIdentity, setAdminIdentity] = useState<string | null>(null);
+
+  const firebaseReady = isFirebaseConfigured();
+
+  const handleUnlockWithToken = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const token = adminToken.trim();
+    if (token.length < 6) {
+      setAdminAuthError(
+        isEn ? 'Please enter a valid Admin Token.' : 'Vui lòng nhập Admin Token hợp lệ.',
+      );
+      return;
+    }
+    setAdminAuthBusy(true);
+    setAdminAuthError(null);
+    try {
+      const res = await fetch('/api/admin_auth.php', {
+        headers: { 'X-Admin-Token': token },
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || `HTTP ${res.status}`);
+      }
+      setIsUnlocked(true);
+      setAuthMethod('token');
+      setAdminIdentity('X-Admin-Token');
+    } catch (err) {
+      setAdminAuthError(
+        err instanceof Error
+          ? err.message
+          : isEn
+            ? 'Invalid Admin Token.'
+            : 'Admin Token không đúng hoặc chưa được cấu hình.',
+      );
+    } finally {
+      setAdminAuthBusy(false);
+    }
+  };
+
+  const handleAdminGoogleLogin = async () => {
+    setAdminAuthBusy(true);
+    setAdminAuthError(null);
+    try {
+      const profile = await loginWithGoogleAccount();
+      const idToken = await getFirebaseIdToken();
+      if (!idToken) {
+        throw new Error(
+          isEn
+            ? 'Unable to retrieve Firebase ID Token.'
+            : 'Không lấy được Firebase ID Token từ Google.',
+        );
+      }
+      const res = await fetch('/api/admin_auth.php', {
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || `HTTP ${res.status}`);
+      }
+      setIsUnlocked(true);
+      setAuthMethod('firebase');
+      setAdminIdentity(profile.email || profile.uid);
+    } catch (err) {
+      setAdminAuthError(
+        err instanceof Error
+          ? err.message
+          : isEn
+            ? 'Google Admin authentication failed.'
+            : 'Đăng nhập Admin bằng Google thất bại.',
+      );
+    } finally {
+      setAdminAuthBusy(false);
+    }
+  };
+
+  const handleAdminLogout = async () => {
+    if (authMethod === 'firebase') {
+      await signOutAccount();
+    }
+    setIsUnlocked(false);
+    setAuthMethod(null);
+    setAdminToken('');
+    setAdminIdentity(null);
+    setAdminAuthError(null);
+  };
 
   // Prediction Market Admin & AI Oracle States
   const [markets, setMarkets] = useState<PredictionMarket[]>(() =>
@@ -128,12 +224,19 @@ export const AdminPage: React.FC = () => {
 
     setPubSubmitting(true);
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (adminToken.trim()) {
+        headers['X-Admin-Token'] = adminToken.trim();
+      }
+      const idToken = await getFirebaseIdToken();
+      if (idToken) {
+        headers.Authorization = `Bearer ${idToken}`;
+      }
       const res = await fetch('/api/posts.php', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Admin-Token': adminToken.trim(),
-        },
+        headers,
         body: JSON.stringify({
           title,
           slug,
@@ -309,6 +412,92 @@ export const AdminPage: React.FC = () => {
         </a>
       </div>
 
+      {/* Admin Login Gate */}
+      <section className="rounded-2xl border border-paper-300 dark:border-ink-800 bg-paper-50 dark:bg-ink-900 p-5 sm:p-6">
+        {!isUnlocked ? (
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-serif text-lg font-bold flex items-center gap-2 text-ink-950 dark:text-paper-50">
+                  <Lock className="w-5 h-5 text-[#146EBE]" />
+                  {isEn ? 'Admin Authentication' : 'Đăng nhập Quản trị viên (Admin)'}
+                </h2>
+                <p className="text-xs text-ink-600 dark:text-ink-400 mt-1">
+                  {isEn
+                    ? 'Sign in with an authorized Google Admin account (Firebase UID) or enter your server X-Admin-Token.'
+                    : 'Đăng nhập bằng tài khoản Google Admin (đã cấp UID trong api/config.php) hoặc nhập X-Admin-Token.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+              {firebaseReady && (
+                <button
+                  type="button"
+                  disabled={adminAuthBusy}
+                  onClick={() => void handleAdminGoogleLogin()}
+                  className="px-4 py-2.5 rounded-xl border border-paper-300 dark:border-ink-700 bg-white dark:bg-ink-950 hover:border-[#146EBE] text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {adminAuthBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4 text-[#146EBE]" />}
+                  {isEn ? 'Sign in with Google (Admin)' : 'Đăng nhập Admin bằng Google'}
+                </button>
+              )}
+
+              <form onSubmit={(e) => void handleUnlockWithToken(e)} className="flex-1 flex flex-wrap items-center gap-2">
+                <input
+                  type="password"
+                  value={adminToken}
+                  onChange={(e) => setAdminToken(e.target.value)}
+                  placeholder={isEn ? 'Enter X-Admin-Token...' : 'Nhập X-Admin-Token từ api/config.php...'}
+                  className="flex-1 min-w-[220px] px-3.5 py-2.5 rounded-xl border border-paper-300 dark:border-ink-700 bg-white dark:bg-ink-950 text-xs"
+                />
+                <button
+                  type="submit"
+                  disabled={adminAuthBusy}
+                  className="px-4 py-2.5 rounded-xl bg-[#146EBE] hover:bg-[#0f5ba0] text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {adminAuthBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unlock className="w-3.5 h-3.5" />}
+                  <span>{isEn ? 'Unlock with Token' : 'Mở khóa bằng Token'}</span>
+                </button>
+              </form>
+            </div>
+
+            {adminAuthError && (
+              <div className="p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-xs text-rose-700 dark:text-rose-300 flex items-center gap-2">
+                <XCircle className="w-4 h-4 shrink-0" />
+                <span>{adminAuthError}</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold">
+                <Unlock className="w-3.5 h-3.5" />
+                {authMethod === 'firebase'
+                  ? isEn
+                    ? `Admin Google: ${adminIdentity}`
+                    : `Admin Google: ${adminIdentity}`
+                  : authMethod === 'token'
+                    ? isEn
+                      ? 'Authenticated via X-Admin-Token'
+                      : 'Đã xác thực bằng X-Admin-Token'
+                    : isEn
+                      ? 'Local Admin Mode'
+                      : 'Chế độ Admin Localhost'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleAdminLogout()}
+              className="px-3 py-1.5 rounded-lg border border-paper-300 dark:border-ink-700 hover:bg-paper-100 dark:hover:bg-ink-800 text-xs font-semibold cursor-pointer"
+            >
+              {isEn ? 'Lock / Sign Out' : 'Khóa / Đăng xuất Admin'}
+            </button>
+          </div>
+        )}
+      </section>
+
       {/* KPI Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
@@ -345,40 +534,16 @@ export const AdminPage: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {!isUnlocked ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="password"
-                  value={adminToken}
-                  onChange={(e) => setAdminToken(e.target.value)}
-                  placeholder={isEn ? 'Enter Admin Token...' : 'Nhập X-Admin-Token...'}
-                  className="px-3 py-1.5 rounded-lg border border-paper-300 dark:border-ink-700 bg-paper-50 dark:bg-ink-950 text-xs"
-                />
-                <button
-                  type="button"
-                  onClick={() => setIsUnlocked(adminToken.trim().length >= 6)}
-                  className="px-3 py-1.5 rounded-lg bg-[#146EBE] text-white text-xs font-bold inline-flex items-center gap-1"
-                >
-                  <Unlock className="w-3.5 h-3.5" />
-                  <span>{isEn ? 'Unlock' : 'Mở khóa'}</span>
-                </button>
-              </div>
-            ) : (
-              <>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold">
-                  <Unlock className="w-3 h-3" />
-                  {isLocalhost ? (isEn ? 'Local Admin Mode' : 'Admin Localhost') : 'Admin Unlocked'}
-                </span>
-                <button
-                  type="button"
-                  disabled={batchBusy}
-                  onClick={() => void handleBatchScan()}
-                  className="px-3.5 py-2 rounded-xl bg-[#146EBE] hover:bg-[#0f5ba0] text-white text-xs font-bold inline-flex items-center gap-1.5 disabled:opacity-50"
-                >
-                  {batchBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                  <span>{isEn ? 'Batch AI Scan' : 'AI Quét hàng loạt'}</span>
-                </button>
-              </>
+            {isUnlocked && (
+              <button
+                type="button"
+                disabled={batchBusy}
+                onClick={() => void handleBatchScan()}
+                className="px-3.5 py-2 rounded-xl bg-[#146EBE] hover:bg-[#0f5ba0] text-white text-xs font-bold inline-flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {batchBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                <span>{isEn ? 'Batch AI Scan' : 'AI Quét hàng loạt'}</span>
+              </button>
             )}
           </div>
         </div>

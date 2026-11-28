@@ -121,6 +121,41 @@ function vneRequireAdmin(): array {
     return $claims;
 }
 
+/**
+ * Xác thực quyền Admin qua X-Admin-Token HOẶC Firebase ID Token (Google Sign-In)
+ */
+function vneVerifyAdminAccess(): array {
+    $config = getVneConfig();
+    $expectedToken = trim((string)($config['security']['admin_token'] ?? ''));
+    $providedToken = trim((string)($_SERVER['HTTP_X_ADMIN_TOKEN'] ?? ''));
+
+    if (
+        $expectedToken !== ''
+        && !str_starts_with($expectedToken, 'THAY_BANG_')
+        && $providedToken !== ''
+        && hash_equals($expectedToken, $providedToken)
+    ) {
+        return ['method' => 'token', 'uid' => null, 'email' => null];
+    }
+
+    $bearer = vneGetBearerToken();
+    if ($bearer !== '') {
+        $claims = vneVerifyFirebaseToken($bearer);
+        if (!$claims) {
+            vneJsonError('Phiên Google/Firebase không hợp lệ hoặc đã hết hạn.', 401, 'INVALID_TOKEN');
+        }
+        $uid = (string)($claims['sub'] ?? '');
+        $email = (string)($claims['email'] ?? '');
+        $allowedUids = $config['security']['admin_firebase_uids'] ?? [];
+        if ($uid !== '' && in_array($uid, $allowedUids, true)) {
+            return ['method' => 'firebase', 'uid' => $uid, 'email' => $email ?: null];
+        }
+        vneJsonError("Tài khoản Google (UID: {$uid}) chưa được cấp quyền Admin trong api/config.php.", 403, 'ADMIN_UID_NOT_ALLOWED');
+    }
+
+    vneJsonError('Vui lòng đăng nhập Admin bằng Google hoặc nhập X-Admin-Token hợp lệ.', 401, 'ADMIN_AUTH_REQUIRED');
+}
+
 function vneGetDownloadHmacSecret(): string {
     $config = getVneConfig();
     $secret = trim((string)($config['security']['download_hmac_secret'] ?? ($config['security']['admin_token'] ?? '')));

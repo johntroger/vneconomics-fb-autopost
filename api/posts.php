@@ -15,15 +15,7 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 if ($method === 'POST') {
     vneEnforceRateLimit('posts_admin_write', 20, 60);
-    $config = getVneConfig();
-    $expected = trim((string)($config['security']['admin_token'] ?? ''));
-    $provided = trim((string)($_SERVER['HTTP_X_ADMIN_TOKEN'] ?? ''));
-    if ($expected === '' || str_starts_with($expected, 'THAY_BANG_')) {
-        vneJsonError('Admin Token chưa được cấu hình trong api/config.php.', 503, 'ADMIN_TOKEN_NOT_CONFIGURED');
-    }
-    if ($provided === '' || !hash_equals($expected, $provided)) {
-        vneJsonError('Sai hoặc thiếu header X-Admin-Token.', 403, 'FORBIDDEN');
-    }
+    vneVerifyAdminAccess();
 
     $body = vneReadJsonBody();
     $title = vneSanitizePlainText((string)($body['title'] ?? ''), 500);
