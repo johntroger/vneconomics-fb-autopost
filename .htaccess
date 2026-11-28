@@ -1,0 +1,52 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Chặn truy cập trực tiếp vào thư mục data nội bộ
+  RewriteRule ^data(/|$) - [F,L]
+
+  # ========================================================================
+  # 1. SECURITY HEADERS & CONTENT-SECURITY-POLICY (OWASP + BYOK + EMBEDS)
+  # ========================================================================
+  <IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://challenges.cloudflare.com https://s3.tradingview.com https://cls.giavangvietnam.com https://apis.google.com https://tools.prnewswire.com https://*.prnewswire.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://tools.prnewswire.com https://*.prnewswire.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://view.officeapps.live.com https://lookerstudio.google.com https://s.tradingview.com https://www.tradingview.com https://wise.com https://vn.widgets.investing.com https://www.widgets.investing.com https://sslirates.investing.com https://data.giavangvietnam.com https://cls.giavangvietnam.com https://challenges.cloudflare.com https://*.firebaseapp.com https://tools.prnewswire.com https://*.prnewswire.com; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com wss://stream.binance.com:9443 https://api.binance.com https://api.llama.fi https://open.er-api.com https://api.alternative.me https://api.worldbank.org https://data.giavangvietnam.com https://cls.giavangvietnam.com https://generativelanguage.googleapis.com https://api.openai.com https://openrouter.ai https://*.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://challenges.cloudflare.com https://tools.prnewswire.com https://*.prnewswire.com;"
+  </IfModule>
+
+  # ========================================================================
+  # 2. DYNAMIC SITEMAP & GEO LLMS.TXT ENDPOINTS
+  # ========================================================================
+  RewriteRule ^sitemap_index\.xml$ api/sitemap.php [L]
+  RewriteRule ^(post|product|course|glossary|market|pages)-sitemap\.xml$ api/sitemap.php?type=$1 [L,QSA]
+  RewriteRule ^llms\.txt$ api/llms.php [L]
+  RewriteRule ^llms-full\.txt$ api/llms.php?full=1 [L,QSA]
+
+  # ========================================================================
+  # 3. FULL PHP SSR PRERENDERING CHO SEARCH BOT & AI CRAWLERS
+  # ========================================================================
+  RewriteCond %{REQUEST_URI} !^/api/
+  RewriteCond %{REQUEST_URI} !^/assets/
+  RewriteCond %{REQUEST_URI} !^/wp-content/
+  RewriteCond %{REQUEST_URI} !^/uploads/
+  RewriteCond %{HTTP_USER_AGENT} (googlebot|bingbot|applebot|baiduspider|gptbot|oai-searchbot|chatgpt-user|perplexitybot|claudebot|google-extended|facebookexternalhit|facebot|meta-externalagent|twitterbot|zalo|telegrambot|whatsapp|linkedinbot) [NC]
+  RewriteRule ^(.*)$ api/ssr_render.php?route=$1 [L,QSA]
+
+  # ========================================================================
+  # 4. SPA ROUTING FALLBACK (NGƯỜI DÙNG THẬT)
+  # ========================================================================
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_URI} !^/api/
+  RewriteCond %{REQUEST_URI} !^/uploads/
+  RewriteCond %{REQUEST_URI} !^/wp-content/
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Chặn truy cập trực tiếp vào file cấu hình, database, cache, data & sổ cái nội bộ
+<FilesMatch "(\.env|\.sql|\.jsonl|config\.php|composer\.(json|lock)|book_nft_registry\.json|public_profiles\.json|predictions_registry\.json)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>

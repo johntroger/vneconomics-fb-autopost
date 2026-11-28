@@ -1,0 +1,1 @@
+import{aM as t}from"./vendor-ui-CTfctAJL.js";function r(o){return t.sanitize(o,{USE_PROFILES:{html:!0},FORBID_TAGS:["script","style","object","embed","form"],FORBID_ATTR:["onerror","onload","onclick","onmouseover"]})}export{r as s};
