@@ -102,20 +102,34 @@ function vneRequireAuth(): array {
     return $claims;
 }
 
+function vneIsAdminClaims(array $claims, array $config): bool {
+    $uid = (string)($claims['sub'] ?? '');
+    $allowedUids = $config['security']['admin_firebase_uids'] ?? [];
+    if ($uid !== '' && in_array($uid, $allowedUids, true)) {
+        return true;
+    }
+
+    $email = strtolower(trim((string)($claims['email'] ?? '')));
+    $emailVerified = ($claims['email_verified'] ?? false) === true;
+    $allowedEmails = array_map(
+        static fn($e) => strtolower(trim((string)$e)),
+        $config['security']['admin_emails'] ?? ['tranthanhtung37@gmail.com']
+    );
+    return $emailVerified && $email !== '' && in_array($email, $allowedEmails, true);
+}
+
 function vneRequireAdmin(): array {
     $config = getVneConfig();
     $adminTokenHeader = $_SERVER['HTTP_X_ADMIN_TOKEN'] ?? '';
     $expectedAdminToken = $config['security']['admin_token'] ?? '';
 
     $claims = vneRequireAuth();
-    $allowedUids = $config['security']['admin_firebase_uids'] ?? [];
-    $uid = (string)($claims['sub'] ?? '');
 
     $hasValidSecret = $expectedAdminToken !== ''
         && !str_contains($expectedAdminToken, 'THAY_BANG')
         && hash_equals($expectedAdminToken, $adminTokenHeader);
 
-    if (!in_array($uid, $allowedUids, true) && !$hasValidSecret) {
+    if (!vneIsAdminClaims($claims, $config) && !$hasValidSecret) {
         vneJsonError('Bạn không có quyền truy cập khu vực quản trị.', 403, 'FORBIDDEN');
     }
     return $claims;
@@ -146,11 +160,10 @@ function vneVerifyAdminAccess(): array {
         }
         $uid = (string)($claims['sub'] ?? '');
         $email = (string)($claims['email'] ?? '');
-        $allowedUids = $config['security']['admin_firebase_uids'] ?? [];
-        if ($uid !== '' && in_array($uid, $allowedUids, true)) {
-            return ['method' => 'firebase', 'uid' => $uid, 'email' => $email ?: null];
+        if (vneIsAdminClaims($claims, $config)) {
+            return ['method' => 'firebase', 'uid' => $uid ?: null, 'email' => $email ?: null];
         }
-        vneJsonError("Tài khoản Google (UID: {$uid}) chưa được cấp quyền Admin trong api/config.php.", 403, 'ADMIN_UID_NOT_ALLOWED');
+        vneJsonError("Tài khoản Google ({$email} / UID: {$uid}) chưa được cấp quyền Admin.", 403, 'ADMIN_UID_NOT_ALLOWED');
     }
 
     vneJsonError('Vui lòng đăng nhập Admin bằng Google hoặc nhập X-Admin-Token hợp lệ.', 401, 'ADMIN_AUTH_REQUIRED');

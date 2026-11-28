@@ -26,7 +26,8 @@ return [
         'cron_secret'          => 'vne_fb_cron_2026_secret_key',
         'download_hmac_secret' => 'THAY_BANG_CHUOI_HMAC_BI_MAT_64_KY_TU',
         'cors_allowed_origins' => ['https://vneconomics.com', 'https://www.vneconomics.com'],
-        'admin_firebase_uids'  => [] // Danh sách Firebase UID có quyền admin
+        'admin_firebase_uids'  => [], // Danh sách Firebase UID có quyền admin
+        'admin_emails'         => ['tranthanhtung37@gmail.com'], // Super Admin Google Email được xác thực qua Firebase
     ],
     'firebase' => [
         'project_id' => 'YOUR_FIREBASE_PROJECT_ID'
