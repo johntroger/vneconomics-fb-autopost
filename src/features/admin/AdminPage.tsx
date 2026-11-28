@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Bot,
   CheckCircle2,
   Database,
   ExternalLink,
@@ -400,16 +399,6 @@ export const AdminPage: React.FC = () => {
             {isEn ? 'Content Administration & AI Oracle Console' : 'Quản trị Nội dung & AI Oracle Sàn Dự báo'}
           </h1>
         </div>
-        <a
-          href="/admin.html"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-4 py-2.5 rounded-xl bg-[#146EBE] hover:bg-[#0f5ba0] text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
-        >
-          <Bot className="w-4 h-4" />
-          {isEn ? 'Open FB/Telegram Autopost Console (/admin.html)' : 'Mở Bảng điều khiển FB/Telegram Autopost (/admin.html)'}
-          <ExternalLink className="w-3.5 h-3.5" />
-        </a>
       </div>
 
       {/* Admin Login Gate */}
